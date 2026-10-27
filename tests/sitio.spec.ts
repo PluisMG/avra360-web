@@ -9,7 +9,7 @@ for (const ancho of [1024, 1366]) {
     await expect(nav).toBeVisible();
     await expect(page.locator('details.menu')).toBeHidden();
 
-    for (const nombre of ['Inicio', 'Guías COFEPRIS', 'Caso', 'Boletín', 'Contacto']) {
+    for (const nombre of ['Inicio', 'Servicios', 'Caso', 'Boletín', 'Contacto']) {
       const enlace = nav.getByRole('link', { name: nombre, exact: true });
       await expect(enlace).toBeVisible();
       await enlace.click({ trial: true });
@@ -32,12 +32,15 @@ for (const ancho of [1024, 1366]) {
     expect(cajaTitulo!.y + cajaTitulo!.height).toBeLessThanOrEqual(cajaBanner!.y + 1);
     expect(cajaWhatsapp!.y + cajaWhatsapp!.height).toBeLessThanOrEqual(cajaBanner!.y + 1);
 
-    await nav.locator('summary', { hasText: 'Servicios' }).click();
-    await nav.getByRole('link', { name: 'SEO local', exact: true }).click();
-    await expect(page).toHaveURL(/\/servicios\/seo-local-google-maps$/);
-    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    await nav.getByRole('link', { name: 'Servicios', exact: true }).click();
+    await expect(page).toHaveURL(/\/servicios$/);
+    await expect(page.locator('#sitio-web')).toBeVisible();
+    await expect(page.locator('#seo-local')).toBeVisible();
+    await expect(page.locator('#contenido-cofepris')).toBeVisible();
 
     await page.goto('/');
+    await expect(page.locator('a[href="/servicios#sitio-web"]')).toBeVisible();
+    await expect(page.locator('a[href="/servicios/paginas-web-para-medicos"]')).toHaveCount(0);
     await page.locator('nav.enlaces--escritorio').getByRole('link', { name: 'Contacto', exact: true }).click();
     await expect(page).toHaveURL(/\/contacto$/);
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();

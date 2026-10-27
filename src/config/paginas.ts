@@ -65,6 +65,26 @@ export const catalogoGuias = [
   { slug: 'checklist-publicidad-cofepris', tipo: 'guia' as const },
 ] as const;
 
+/** `/guias/cofepris` es la guía pilar, no el índice de guías. */
+export const guiaPilar = {
+  slug: 'cofepris',
+  titulo: '¿Aviso o permiso de publicidad COFEPRIS? Guía para médicos',
+  descripcion:
+    'Cuándo basta el aviso de publicidad y cuándo se necesita permiso de COFEPRIS, qué cuesta y qué datos lleva, explicado para consultorios y clínicas.',
+  sufijo: false,
+} as const;
+
+export function seoDeGuia(pagina: { slug: string; titulo: string; descripcion: string; sufijo?: boolean }) {
+  if (pagina.slug === guiaPilar.slug) {
+    return { titulo: guiaPilar.titulo, descripcion: guiaPilar.descripcion, sufijo: false as const };
+  }
+  return {
+    titulo: pagina.titulo,
+    descripcion: pagina.descripcion,
+    sufijo: pagina.sufijo !== false,
+  };
+}
+
 export const catalogoNosotros = {
   slug: 'nosotros',
   tipo: 'nosotros' as const,
@@ -115,9 +135,23 @@ const slugPorTarjeta: Record<Exclude<ClaveTarjeta, 'estrategia'>, string> = {
   'contenido-cofepris': 'publicidad-medica-cofepris',
 };
 
-/** Si el archivo del servicio no existe, el enlace no apunta a esa URL. */
+const anclaPorTarjeta: Record<Exclude<ClaveTarjeta, 'estrategia'>, string> = {
+  'sitio-web': '/servicios#sitio-web',
+  'seo-local': '/servicios#seo-local',
+  'contenido-cofepris': '/servicios#contenido-cofepris',
+};
+
+/**
+ * La tarjeta apunta a la página del servicio solo si ese archivo se construye.
+ * Si no, conserva el ancla que ya tenía en `/servicios`.
+ */
 export function hrefTarjetaInicio(clave: ClaveTarjeta, publicados: ReadonlySet<string>) {
   if (clave === 'estrategia') return '/servicios#estrategia';
   const slug = slugPorTarjeta[clave];
-  return publicados.has(slug) ? `/servicios/${slug}` : '/servicios';
+  return publicados.has(slug) ? `/servicios/${slug}` : anclaPorTarjeta[clave];
+}
+
+export function enlaceAPaginaAusente(href: string, publicados: ReadonlySet<string>) {
+  const slug = href.match(/^\/servicios\/([a-z0-9-]+)$/)?.[1];
+  return slug !== undefined && !publicados.has(slug);
 }

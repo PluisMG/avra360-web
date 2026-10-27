@@ -168,7 +168,7 @@ Claves del frontmatter, en todas:
 | `titulo` | Título SEO, sin « \| MKT Creativa». En contacto el layout ya no añade el sufijo; en estas páginas sí |
 | `descripcion` | Meta descripción, de 50 a 180 caracteres |
 | `h1` | Único título visible |
-| `sufijo` | Opcional. Por defecto la plantilla añade « \| MKT Creativa». Ponga `false` cuando el título de la revisión ya no lleva esa marca: las guías `aviso-o-permiso-de-publicidad-cofepris`, `publicidad-en-redes-sociales-cofepris` y `checklist-publicidad-cofepris` |
+| `sufijo` | Opcional. Por defecto la plantilla añade « \| MKT Creativa». `/guias/cofepris` no la añade: es la guía pilar y su título ya viene cerrado. También va en `false` en `aviso-o-permiso-de-publicidad-cofepris`, `publicidad-en-redes-sociales-cofepris` y `checklist-publicidad-cofepris` |
 
 El cuerpo es Markdown, sin `h1` (la plantilla ya lo pone). Las páginas de servicio enlazan a la guía `/guias/cofepris` si ese archivo existe, al caso y a WhatsApp. La guía enlaza al servicio de publicidad si existe, al boletín y a WhatsApp.
 
@@ -181,13 +181,15 @@ Slugs aprobados y, cuando Creativo escriba el archivo, el título y la meta que 
 | `publicidad-medica-cofepris.md` | `servicio` | `/servicios/publicidad-medica-cofepris` | Publicidad médica y COFEPRIS para consultorios | Revisamos sus anuncios, redes y sitio contra el Reglamento de Publicidad y le decimos si necesita aviso o permiso de COFEPRIS. No sustituye a un abogado. |
 | `marketing-para-psicologos.md` | `servicio` | `/servicios/marketing-para-psicologos` | Marketing para psicólogos en Chiapas | Marketing ético para psicólogos, psiquiatras y clínicas de salud mental en Chiapas: sitio, Google Maps y contenido sin promesas ni datos de pacientes. |
 | `diagnostico-digital.md` | `servicio` | `/servicios/diagnostico-digital` | Diagnóstico digital para consultorios | Revisamos su ficha de Google, sitio, Doctoralia y anuncios, y le entregamos 10 prioridades con los riesgos COFEPRIS señalados. |
-| `cofepris.md` | `guia` | `/guias/cofepris` | Guías de publicidad COFEPRIS para médicos | Aviso o permiso de publicidad, redes sociales, multas y qué puede decir un consultorio: guías en lenguaje claro, con fuentes. No es asesoría legal. |
+| `cofepris.md` | `guia` | `/guias/cofepris` | ¿Aviso o permiso de publicidad COFEPRIS? Guía para médicos | Cuándo basta el aviso de publicidad y cuándo se necesita permiso de COFEPRIS, qué cuesta y qué datos lleva, explicado para consultorios y clínicas. |
 | `aviso-o-permiso-de-publicidad-cofepris.md` | `guia` | `/guias/aviso-o-permiso-de-publicidad-cofepris` | ¿Aviso o permiso de publicidad COFEPRIS? Guía para médicos | Cuándo basta el aviso de publicidad y cuándo se necesita permiso de COFEPRIS, qué cuesta y qué datos lleva, explicado para consultorios y clínicas. |
 | `publicidad-en-redes-sociales-cofepris.md` | `guia` | `/guias/publicidad-en-redes-sociales-cofepris` | Publicidad médica en redes sociales y COFEPRIS: qué revisar | Qué puede publicar un médico o psicólogo en Facebook e Instagram, qué requiere aviso de COFEPRIS y qué frases evitar. Lista de revisión con fuentes. |
 | `checklist-publicidad-cofepris.md` | `guia` | `/guias/checklist-publicidad-cofepris` | Checklist de publicidad COFEPRIS para consultorios | Lista de verificación antes de publicar un anuncio de salud: cédula, aviso o permiso, promesas, testimonios, precios y datos de pacientes. |
 | `nosotros.md` | `nosotros` | `/nosotros` | Nosotros: marketing de salud en Chiapas | MKT Creativa, la agencia de Pedro Luis Maldonado Gordillo en Tuxtla Gutiérrez: marketing para clínicas con criterio COFEPRIS y énfasis en salud mental. |
 
-Los H1 de las tres páginas que ya tienen texto son: «Páginas web para médicos y consultorios en Chiapas», «SEO local y Google Maps para consultorios» y «Publicidad médica con criterio COFEPRIS». El de la guía es «Guías de publicidad COFEPRIS para médicos». Esas cuatro ya están en el repositorio, con los párrafos que antes vivían en `/servicios`. El resto espera el texto de Creativo: no hay página, ni entrada de menú, ni enlace hacia ellas.
+Esas páginas todavía no tienen texto aprobado. En este build no hay archivo en `src/content/paginas/`, así que no existen la ruta, el menú, el sitemap ni el enlace. No copie un borrador para llenarlas. Las tarjetas del inicio y de `/servicios` usan `/servicios/{slug}` solo cuando el archivo ya se construye; si no, siguen en el ancla de `/servicios` (`#estrategia`, `#sitio-web`, `#seo-local`, `#contenido-cofepris`).
+
+`/guias/cofepris` es la guía pilar, no el índice. Cuando exista el archivo, el layout usa el título y la meta de la tabla y `sufijo={false}` en `Base`, aunque el frontmatter traiga el título del hub.
 
 Ejemplo mínimo:
 

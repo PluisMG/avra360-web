@@ -148,7 +148,44 @@ export const servicios = {
         'La estrategia identifica desde el inicio qué piezas requieren aviso o permiso de publicidad ante COFEPRIS y qué documentos los respaldan. Si un caso necesita la opinión de un abogado sanitario, se lo decimos antes de producir, no después de publicar.',
       ],
     },
+    {
+      id: 'sitio-web',
+      numero: '02',
+      titulo: 'Sitio web',
+      parrafos: [
+        'Construimos sitios que cargan rápido, se leen bien en el teléfono y pueden usarse con teclado y lector de pantalla. Cada página dice qué servicio ofrece, quién lo presta, dónde y cómo se solicita.',
+        'Incluimos lo que la norma pide y lo que da confianza: nombre de la institución que expidió el título y número de cédula profesional de quien ofrece el servicio, aviso de privacidad y un botón directo a WhatsApp. No usamos contadores de pacientes, testimonios como prueba ni imágenes de antes y después.',
+      ],
+    },
+    {
+      id: 'seo-local',
+      numero: '03',
+      titulo: 'SEO local y Google',
+      parrafos: [
+        'Trabajamos para que su servicio pueda encontrarse en su ciudad: páginas con la especialidad y la ubicación escritas con claridad, una ficha de Google completa y verificada, y datos de contacto idénticos en el sitio, en Google y en los directorios donde ya aparece.',
+        'No ofrecemos “el primer lugar en Google” ni compramos reseñas. Le ayudamos a pedir opiniones de forma legítima y a responderlas sin revelar datos de salud. Cuando medimos avances, los reportamos como datos observados, con su fecha.',
+      ],
+    },
+    {
+      id: 'contenido-cofepris',
+      numero: '04',
+      titulo: 'Contenido y campañas con criterio COFEPRIS',
+      parrafos: [
+        'Textos del sitio, publicaciones en redes, artículos, boletines y anuncios salen del mismo criterio. Cada pieza informa sobre el tipo, las características y la forma de acceder al servicio, sin atribuirle efectos que no se puedan comprobar.',
+        'En campañas pagadas también cuidamos las políticas de Meta y Google para temas de salud, como no aludir a la condición de salud de quien lee el anuncio. Antes de pautar, confirmamos que el aviso o el permiso de publicidad que corresponda esté presentado.',
+      ],
+    },
   ],
+  cofepris: {
+    id: 'cofepris',
+    titulo: 'Cómo trabajamos la publicidad de servicios de salud',
+    parrafos: [
+      'En México, la publicidad de servicios de salud se rige por la Ley General de Salud y por el Reglamento de la Ley General de Salud en Materia de Publicidad, y la vigila la Comisión Federal para la Protección contra Riesgos Sanitarios (COFEPRIS). La ley y el reglamento obligan también a las agencias de publicidad: quien elabora el material debe apegarse al aviso o permiso del anunciante.',
+      'De forma general, la publicidad de un profesional que ejerce de manera individual requiere presentar un aviso de publicidad antes de difundirse, mientras que la de un establecimiento, como una clínica, requiere permiso de publicidad. En ambos casos, la publicidad debe indicar la institución que expidió el título y, en su caso, el número de cédula profesional. Cada caso concreto se confirma con el trámite vigente ante COFEPRIS.',
+      'Por eso nuestro método es concreto: no prometemos resultados ni tiempos de mejoría; no ofrecemos curas; no usamos testimonios de pacientes como prueba de eficacia; no publicamos antes y después; no afirmamos superioridad sobre otros profesionales sin sustento, y guardamos la documentación que respalda cada afirmación. Si una pieza requiere aviso o permiso, se lo señalamos y preparamos el material para el trámite.',
+      'Este texto describe el criterio de trabajo de la agencia. No es un dictamen jurídico ni una autorización sanitaria: el permiso lo otorga la autoridad y un abogado sanitario puede confirmar su caso particular.',
+    ],
+  },
   cierreTitulo: 'Conversemos sobre su clínica o consultorio',
   cierreTexto:
     'Cuéntenos su especialidad, la ciudad donde atiende y si ya tiene sitio web o ficha de Google. Le respondemos con una propuesta clara de por dónde empezar.',

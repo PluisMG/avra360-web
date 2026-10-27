@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { hrefTarjetaInicio } from './paginas.ts';
+import { enlaceAPaginaAusente, guiaPilar, hrefTarjetaInicio, seoDeGuia } from './paginas.ts';
 import { datosDeMarkdown } from './ediciones-sitemap.ts';
 import { grafoOrganizacion, jsonLdArticulo, serializar } from './schema.ts';
 
@@ -66,13 +66,54 @@ describe('JSON-LD de la organización', () => {
 });
 
 describe('enlaces que dependen de un archivo', () => {
-  it('no apunta a un servicio cuyo markdown no existe', () => {
-    assert.equal(hrefTarjetaInicio('estrategia', new Set()), '/servicios#estrategia');
-    assert.equal(hrefTarjetaInicio('sitio-web', new Set()), '/servicios');
-    assert.equal(
-      hrefTarjetaInicio('sitio-web', new Set(['paginas-web-para-medicos'])),
-      '/servicios/paginas-web-para-medicos',
+  const claves = ['estrategia', 'sitio-web', 'seo-local', 'contenido-cofepris'] as const;
+
+  it('sin archivo conserva el ancla de /servicios y no inventa la página', () => {
+    const publicados = new Set<string>();
+    assert.deepEqual(
+      claves.map((clave) => hrefTarjetaInicio(clave, publicados)),
+      [
+        '/servicios#estrategia',
+        '/servicios#sitio-web',
+        '/servicios#seo-local',
+        '/servicios#contenido-cofepris',
+      ],
     );
+    for (const href of claves.map((clave) => hrefTarjetaInicio(clave, publicados))) {
+      assert.equal(enlaceAPaginaAusente(href, publicados), false);
+    }
+  });
+
+  it('con archivo apunta a /servicios/{slug} y no a una página que no está en el conjunto', () => {
+    const publicados = new Set(['seo-local-google-maps']);
+    assert.equal(hrefTarjetaInicio('seo-local', publicados), '/servicios/seo-local-google-maps');
+    assert.equal(hrefTarjetaInicio('sitio-web', publicados), '/servicios#sitio-web');
+    assert.equal(hrefTarjetaInicio('contenido-cofepris', publicados), '/servicios#contenido-cofepris');
+    for (const href of claves.map((clave) => hrefTarjetaInicio(clave, publicados))) {
+      assert.equal(enlaceAPaginaAusente(href, publicados), false);
+    }
+    assert.equal(enlaceAPaginaAusente('/servicios/marketing-para-psicologos', publicados), true);
+    assert.equal(enlaceAPaginaAusente('/servicios/diagnostico-digital', new Set()), true);
+  });
+});
+
+describe('guía pilar en /guias/cofepris', () => {
+  it('usa el título y la meta de la pilar, sin el sufijo de la marca', () => {
+    const seo = seoDeGuia({
+      slug: 'cofepris',
+      titulo: 'Guías de publicidad COFEPRIS para médicos',
+      descripcion: 'Texto del hub que no debe publicarse como título de esta URL.',
+      sufijo: true,
+    });
+    assert.equal(seo.titulo, guiaPilar.titulo);
+    assert.equal(seo.titulo, '¿Aviso o permiso de publicidad COFEPRIS? Guía para médicos');
+    assert.equal(
+      seo.descripcion,
+      'Cuándo basta el aviso de publicidad y cuándo se necesita permiso de COFEPRIS, qué cuesta y qué datos lleva, explicado para consultorios y clínicas.',
+    );
+    assert.equal(seo.sufijo, false);
+    assert.ok(seo.titulo.length <= 80);
+    assert.ok(seo.descripcion.length <= 180);
   });
 });
 

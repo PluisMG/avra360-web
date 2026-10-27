@@ -4,20 +4,13 @@ import BloquePrecios from '../components/BloquePrecios.astro';
 import EnlaceWhatsapp from '../components/EnlaceWhatsapp.astro';
 import Migas from '../components/Migas.astro';
 import { mensajesWhatsapp } from '../config/agencia';
-import { catalogoServicios } from '../config/paginas';
+import { hrefTarjetaInicio, type ClaveTarjeta } from '../config/paginas';
 import Base from '../layouts/Base.astro';
-import { inicio, seo, servicios } from '../config/textos';
+import { seo, servicios } from '../config/textos';
 
 const paginas = await getCollection('paginas');
-const porSlug = new Map(paginas.map((pagina) => [pagina.data.slug, pagina]));
-const publicados = catalogoServicios.filter((servicio) => porSlug.has(servicio.slug));
-const guia = porSlug.get('cofepris');
-const resumen = new Map(inicio.servicios.map((tarjeta) => [tarjeta.clave, tarjeta]));
-const resumenPorSlug: Record<string, { titulo: string; texto: string } | undefined> = {
-  'paginas-web-para-medicos': resumen.get('sitio-web'),
-  'seo-local-google-maps': resumen.get('seo-local'),
-  'publicidad-medica-cofepris': resumen.get('contenido-cofepris'),
-};
+const publicados = new Set(paginas.filter((pagina) => pagina.data.tipo === 'servicio').map((pagina) => pagina.data.slug));
+const guia = paginas.find((pagina) => pagina.data.slug === 'cofepris');
 ---
 
 <Base titulo={seo.servicios.titulo} descripcion={seo.servicios.descripcion} mensajeWhatsapp={mensajesWhatsapp.servicios}>
@@ -28,47 +21,40 @@ const resumenPorSlug: Record<string, { titulo: string; texto: string } | undefin
   </div>
 
   {
-    servicios.bloques.map((bloque) => (
-      <section class="seccion" id={bloque.id} aria-labelledby={`${bloque.id}-titulo`}>
-        <div class="contenedor">
-          <p class="paso__num">{bloque.numero}</p>
-          <h2 id={`${bloque.id}-titulo`}>{bloque.titulo}</h2>
-          {bloque.parrafos.map((parrafo) => (
-            <p class="prosa">{parrafo}</p>
-          ))}
-        </div>
-      </section>
-    ))
-  }
-
-  {
-    publicados.map((servicio) => {
-      const pagina = porSlug.get(servicio.slug);
-      const corto = resumenPorSlug[servicio.slug];
+    servicios.bloques.map((bloque) => {
+      const href = hrefTarjetaInicio(bloque.id as ClaveTarjeta, publicados);
       return (
-        <section class="seccion" aria-labelledby={`${servicio.slug}-titulo`}>
+        <section class="seccion" id={bloque.id} aria-labelledby={`${bloque.id}-titulo`}>
           <div class="contenedor">
-            <h2 id={`${servicio.slug}-titulo`}>
-              <a href={`/servicios/${servicio.slug}`}>{corto?.titulo ?? pagina?.data.h1}</a>
+            <p class="paso__num">{bloque.numero}</p>
+            <h2 id={`${bloque.id}-titulo`}>
+              <a href={href}>{bloque.titulo}</a>
             </h2>
-            {corto && <p>{corto.texto}</p>}
+            {bloque.parrafos.map((parrafo) => (
+              <p class="prosa">{parrafo}</p>
+            ))}
           </div>
         </section>
       );
     })
   }
 
-  {
-    guia && (
-      <section class="seccion seccion--banda" aria-labelledby="guia-cofepris">
-        <div class="contenedor">
-          <h2 id="guia-cofepris">
+  <section class="seccion seccion--banda" id={servicios.cofepris.id} aria-labelledby="cofepris-titulo">
+    <div class="contenedor prosa">
+      <h2 id="cofepris-titulo">{servicios.cofepris.titulo}</h2>
+      {servicios.cofepris.parrafos.map((parrafo) => <p>{parrafo}</p>)}
+      <p>
+        <a href="https://www.gob.mx/cofepris">Sitio institucional de COFEPRIS</a>
+      </p>
+      {
+        guia && (
+          <p>
             <a href="/guias/cofepris">{guia.data.h1}</a>
-          </h2>
-        </div>
-      </section>
-    )
-  }
+          </p>
+        )
+      }
+    </div>
+  </section>
 
   <BloquePrecios />
 
