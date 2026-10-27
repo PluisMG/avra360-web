@@ -2,23 +2,50 @@
 import { getCollection, render } from 'astro:content';
 import Migas from '../../components/Migas.astro';
 import { mensajesWhatsapp } from '../../config/agencia';
-import { incluirEdicion } from '../../config/boletin';
+import { incluirEdicion, ordenarEdiciones } from '../../config/boletin';
+import { slugDeEdicion } from '../../config/edicion';
 import { formatearFecha } from '../../config/fechas';
+import { jsonLdArticulo } from '../../config/schema';
 import Base from '../../layouts/Base.astro';
 
 export async function getStaticPaths() {
-  const ediciones = await getCollection('boletin', incluirEdicion);
-  return ediciones.map((edicion) => ({
-    params: { slug: edicion.id },
-    props: { edicion },
-  }));
+  const ediciones = ordenarEdiciones(await getCollection('boletin', incluirEdicion));
+  const vistos = new Set<string>();
+  return ediciones.map((edicion, indice) => {
+    const slug = slugDeEdicion(edicion);
+    if (vistos.has(slug)) throw new Error(`Slug de boletín repetido: ${slug}`);
+    vistos.add(slug);
+    return {
+      params: { slug },
+      props: {
+        edicion,
+        anterior: ediciones[indice + 1] ?? null,
+        siguiente: ediciones[indice - 1] ?? null,
+      },
+    };
+  });
 }
 
-const { edicion } = Astro.props;
+const { edicion, anterior, siguiente } = Astro.props;
 const { Content } = await render(edicion);
 const mensaje = edicion.data.ejemplo
   ? mensajesWhatsapp.ejemplo
   : `Hola. Leí la edición «${edicion.data.titulo}» del boletín de MKT Creativa.`;
+const origen = Astro.site?.origin;
+if (!origen) throw new Error('El build necesita SITE para el JSON-LD de la edición.');
+const publicado = `${edicion.data.fecha}T08:00:00-06:00`;
+const jsonLdExtra = [
+  jsonLdArticulo(origen, {
+    slug: slugDeEdicion(edicion),
+    titulo: edicion.data.titulo,
+    descripcion: edicion.data.descripcion,
+    fecha: edicion.data.fecha,
+    modificado: edicion.data.modificado,
+    autor: edicion.data.autor,
+    fuentes: edicion.data.fuentes,
+    palabras: edicion.data.palabras,
+  }),
+];
 ---
 
 <Base
@@ -26,6 +53,10 @@ const mensaje = edicion.data.ejemplo
   descripcion={edicion.data.descripcion}
   mensajeWhatsapp={mensaje}
   noindex={edicion.data.ejemplo}
+  sufijo={edicion.data.sufijo !== false}
+  ogType="article"
+  publicado={publicado}
+  jsonLdExtra={jsonLdExtra}
 >
   <article class="contenedor seccion">
     <Migas
@@ -67,5 +98,13 @@ const mensaje = edicion.data.ejemplo
       <p>{edicion.data.llamado.texto}</p>
       <a class="boton" href={edicion.data.llamado.enlace}>{edicion.data.llamado.etiqueta}</a>
     </aside>
+    {
+      (anterior || siguiente) && (
+        <nav class="acciones" aria-label="Ediciones">
+          {anterior && <a href={`/boletin/${slugDeEdicion(anterior)}`}>Edición anterior</a>}
+          {siguiente && <a href={`/boletin/${slugDeEdicion(siguiente)}`}>Siguiente</a>}
+        </nav>
+      )
+    }
   </article>
 </Base>

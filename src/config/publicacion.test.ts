@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { mensajesWhatsapp } from './agencia.ts';
 import { fragmentoProhibido } from './publicacion.ts';
+import { descripcionAgencia } from './schema.ts';
 import {
   boletin,
   caso,
@@ -9,7 +10,6 @@ import {
   errorPagina,
   formularioBoletinTextos,
   inicio,
-  jsonLdDescripcion,
   pie,
   seo,
   servicios,
@@ -35,18 +35,28 @@ describe('textos que sí se publican', () => {
       formularioBoletinTextos,
       pie,
       mensajesWhatsapp,
-      jsonLdDescripcion,
+      descripcionAgencia,
     });
     for (const pieza of piezas) {
       assert.equal(fragmentoProhibido(pieza), undefined, pieza);
     }
   });
 
-  it('deja los títulos en 60 caracteres y las metas en 155, sin el sufijo del layout', () => {
+  it('deja los títulos en 80 caracteres y las metas en 180, sin el sufijo del layout', () => {
     for (const pagina of Object.values(seo)) {
-      assert.ok(pagina.titulo.length <= 60, `${pagina.titulo.length}: ${pagina.titulo}`);
-      assert.ok(pagina.descripcion.length <= 155, `${pagina.descripcion.length}: ${pagina.descripcion}`);
+      assert.ok(pagina.titulo.length <= 80, `${pagina.titulo.length}: ${pagina.titulo}`);
+      assert.ok(pagina.descripcion.length <= 180, `${pagina.descripcion.length}: ${pagina.descripcion}`);
     }
+  });
+
+  it('usa los títulos y metas de la revisión SEO', () => {
+    assert.equal(seo.inicio.titulo, 'Agencia de marketing médico en Tuxtla Gutiérrez');
+    assert.equal(seo.inicio.descripcion, 'Marketing para clínicas, consultorios y salud mental en Tuxtla Gutiérrez, Chiapas: estrategia, sitio web y SEO local, con criterio COFEPRIS y sin promesas.');
+    assert.equal(seo.boletin.descripcion, 'Boletín mensual para clínicas y consultorios de Chiapas: Google Maps, publicidad con criterio COFEPRIS e IA. Lea el archivo y suscríbase.');
+    assert.equal(seo.contacto.titulo, 'Contacto de MKT Creativa en Tuxtla Gutiérrez, Chiapas');
+    assert.equal(seo.contacto.descripcion.includes('+52 961 191 9199'), true);
+    assert.equal(seo.contacto.descripcion.includes('{{'), false);
+    assert.equal(seo.aviso.descripcion.includes('Borrador'), false);
   });
 });
 
@@ -60,6 +70,13 @@ describe('detector del build', () => {
     assert.equal(fragmentoProhibido('POR CONFIRMAR'), 'por confirmar');
     assert.equal(fragmentoProhibido('Hola {{nombre}}'), '{{');
     assert.equal(fragmentoProhibido('Textos PROVISIONALES'), 'provisional');
+    assert.equal(fragmentoProhibido('la agencia que cumple con COFEPRIS'), 'cumple con cofepris');
+    assert.equal(fragmentoProhibido('sin meterte en problemas con la norma'), 'sin meterte en problemas');
+    assert.equal(fragmentoProhibido('anuncios conformes a COFEPRIS'), 'conformes a cofepris');
+    assert.equal(fragmentoProhibido('0 % riesgo regulatorio'), '0 % riesgo');
+    assert.equal(fragmentoProhibido('resultado garantizado'), 'garantizado');
+    assert.equal(fragmentoProhibido('No ofrecemos el primer lugar en Google.'), undefined);
+    assert.equal(fragmentoProhibido('conforme a la LFPDPPP'), undefined);
     assert.equal(fragmentoProhibido('MKT Creativa © 2026. Tuxtla Gutiérrez, Chiapas.'), undefined);
   });
 });

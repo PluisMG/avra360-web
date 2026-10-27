@@ -1,5 +1,7 @@
+import { createHash } from 'node:crypto';
 import { readFile, readdir, stat } from 'node:fs/promises';
 import path from 'node:path';
+import { directiva } from '../src/config/csp.ts';
 import { revisarDirectorioPublico } from '../src/config/publicacion.ts';
 
 const dist = path.resolve('dist');
@@ -50,7 +52,42 @@ async function existeRuta(ruta) {
 const htmls = await listar(dist, '.html');
 if (htmls.length === 0) anotar('No hay HTML en dist/. Ejecute npm run build.');
 
+const encabezados = await readFile(path.join(dist, '_headers'), 'utf8').catch(() => '');
+if (!encabezados.includes('Content-Security-Policy')) anotar('Falta _headers con Content-Security-Policy.');
+const scriptSrc = encabezados ? directiva(encabezados.match(/Content-Security-Policy:\s*(.+)/)?.[1] ?? '', 'script-src') : '';
+
 let origen;
+const origenes = new Set();
+
+function anotarOrigen(valor) {
+  try {
+    origenes.add(new URL(valor).origin);
+  } catch {
+    anotar(`URL absoluta ilegible: ${valor}`);
+  }
+}
+
+function origenesDeJson(valor, salida) {
+  if (typeof valor === 'string' && /^https?:\/\//.test(valor)) {
+    let url;
+    try {
+      url = new URL(valor);
+    } catch {
+      anotar(`JSON-LD con URL ilegible: ${valor}`);
+      return;
+    }
+    const externo = ['schema.org', 'wikipedia.org', 'www.gob.mx', 'gob.mx'].some(
+      (host) => url.hostname === host || url.hostname.endsWith(`.${host}`),
+    );
+    if (!externo) salida.add(url.origin);
+    return;
+  }
+  if (Array.isArray(valor)) {
+    for (const item of valor) origenesDeJson(item, salida);
+  } else if (valor && typeof valor === 'object') {
+    for (const item of Object.values(valor)) origenesDeJson(item, salida);
+  }
+}
 for (const archivo of htmls) {
   const html = await readFile(archivo, 'utf8');
   const publica = rutaPublica(archivo);
@@ -64,9 +101,33 @@ for (const archivo of htmls) {
     anotar(`${publica} no tiene Open Graph básico.`);
   }
   if (!html.includes('application/ld+json')) anotar(`${publica} no tiene JSON-LD.`);
+  const bloques = [...html.matchAll(/<script\b[^>]*type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/gi)];
+  for (const bloque of bloques) {
+    const cuerpo = bloque[1] ?? '';
+    if (cuerpo.includes('{{')) anotar(`${publica} tiene un marcador {{ en el JSON-LD.`);
+    try {
+      origenesDeJson(JSON.parse(cuerpo), origenes);
+    } catch {
+      anotar(`${publica} tiene JSON-LD que no se puede leer.`);
+    }
+    if (scriptSrc) {
+      const hash = createHash('sha256').update(cuerpo, 'utf8').digest('base64');
+      if (!scriptSrc.includes(`'sha256-${hash}'`)) {
+        anotar(`${publica} tiene un JSON-LD cuyo hash no está en la CSP.`);
+      }
+    }
+  }
+  if (publica === '/casos/mentalcareclinic' && /<img\b/i.test(html)) {
+    anotar(`${publica} muestra una imagen. MentalCareClinic sigue solo con texto hasta la autorización por escrito.`);
+  }
 
   const canonica = html.match(/rel="canonical" href="([^"]+)"/);
-  if (canonica) origen ??= new URL(canonica[1]).origin;
+  if (canonica) {
+    origen ??= new URL(canonica[1]).origin;
+    anotarOrigen(canonica[1]);
+  }
+  const ogUrl = html.match(/property="og:url" content="([^"]+)"/);
+  if (ogUrl) anotarOrigen(ogUrl[1]);
 
   const atributos = [...html.matchAll(/\b(?:href|src)="([^"]+)"/g)].map((coincidencia) => coincidencia[1]);
   for (const valor of atributos) {
@@ -138,25 +199,40 @@ if (!robots.includes('Disallow: /') && !robots.includes('Sitemap:')) {
   anotar('robots.txt no permite el sitio ni declara el sitemap.');
 }
 
-const encabezados = await readFile(path.join(dist, '_headers'), 'utf8').catch(() => '');
-if (!encabezados.includes('Content-Security-Policy')) anotar('Falta _headers con Content-Security-Policy.');
-
 const sitemap = await readFile(path.join(dist, 'sitemap-index.xml'), 'utf8').catch(() => '');
 if (!sitemap) anotar('Falta sitemap-index.xml.');
 else {
-  const mapas = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((coincidencia) => new URL(coincidencia[1]).pathname);
-  for (const mapa of mapas) {
+  const mapas = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((coincidencia) => coincidencia[1]);
+  for (const completo of mapas) {
+    anotarOrigen(completo);
+    const mapa = new URL(completo).pathname;
     if (!(await existeRuta(mapa))) anotar(`El índice de sitemap apunta a ${mapa}, que no está en dist/.`);
     else {
       const xml = await readFile(await archivoDe(mapa), 'utf8');
-      const locs = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((coincidencia) => new URL(coincidencia[1]).pathname);
-      for (const loc of locs) {
+      const locs = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((coincidencia) => coincidencia[1]);
+      for (const completoLoc of locs) {
+        anotarOrigen(completoLoc);
+        const loc = new URL(completoLoc).pathname;
         if (loc.includes('/boletin/ejemplo-')) anotar(`El sitemap incluye la edición de ejemplo: ${loc}`);
         if (loc.includes('/aviso-de-privacidad')) anotar(`El sitemap incluye el aviso de privacidad: ${loc}`);
         if (!(await existeRuta(loc))) anotar(`El sitemap enlaza a ${loc}, que no está en dist/.`);
       }
     }
   }
+}
+
+const rss = await readFile(path.join(dist, 'boletin/rss.xml'), 'utf8').catch(() => '');
+if (!rss.includes('xmlns:atom')) anotar('El RSS no declara xmlns:atom.');
+if (!/rel="self"/.test(rss)) anotar('El RSS no tiene atom:link rel="self".');
+const rssLink = rss.match(/<link>([^<]+)<\/link>/);
+if (rssLink) anotarOrigen(rssLink[1]);
+const atom = rss.match(/<atom:link[^>]*href="([^"]+)"/);
+if (atom) anotarOrigen(atom[1]);
+if (rss.includes('{{')) anotar('El RSS contiene un marcador {{.');
+
+if (!(await existeRuta('/logo-512.png'))) anotar('Falta logo-512.png en el build.');
+if (origenes.size > 1) {
+  anotar(`Canonical, Open Graph, sitemap, RSS o schema no comparten un solo origen: ${[...origenes].join(', ')}.`);
 }
 
 if (!(await existeRuta('/404'))) anotar('Falta la página 404.');

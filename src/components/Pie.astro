@@ -1,5 +1,6 @@
 ---
-import { agencia, enlaceWhatsapp, navegacionPie, telefono } from '../config/agencia';
+import { getCollection } from 'astro:content';
+import { agencia, enlaceWhatsapp, telefono } from '../config/agencia';
 import { pie } from '../config/textos';
 import FormularioBoletin from './FormularioBoletin.astro';
 
@@ -8,6 +9,17 @@ interface Props {
 }
 
 const { mensaje } = Astro.props;
+const slugs = new Set((await getCollection('paginas')).map((pagina) => pagina.data.slug));
+const enlaces = [
+  { href: '/', etiqueta: 'Inicio' },
+  { href: '/servicios', etiqueta: 'Servicios' },
+  ...(slugs.has('cofepris') ? [{ href: '/guias/cofepris', etiqueta: 'Guías COFEPRIS' }] : []),
+  { href: '/casos/mentalcareclinic', etiqueta: 'Caso' },
+  { href: '/boletin', etiqueta: 'Boletín' },
+  ...(slugs.has('nosotros') ? [{ href: '/nosotros', etiqueta: 'Nosotros' }] : []),
+  { href: '/contacto', etiqueta: 'Contacto' },
+  { href: '/boletin/rss.xml', etiqueta: 'RSS del boletín' },
+];
 ---
 
 <footer class="pie">
@@ -25,7 +37,7 @@ const { mensaje } = Astro.props;
       <nav aria-label="Pie">
         <ul>
           {
-            navegacionPie.map((item) => (
+            enlaces.map((item) => (
               <li>
                 <a href={item.href}>{item.etiqueta}</a>
               </li>

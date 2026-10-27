@@ -4,6 +4,7 @@ import FormularioBoletin from '../../components/FormularioBoletin.astro';
 import Migas from '../../components/Migas.astro';
 import { enlaceWhatsapp, mensajesWhatsapp } from '../../config/agencia';
 import { incluirEdicion, ordenarEdiciones } from '../../config/boletin';
+import { slugDeEdicion } from '../../config/edicion';
 import { formatearFecha } from '../../config/fechas';
 import Base from '../../layouts/Base.astro';
 import { boletin, seo } from '../../config/textos';
@@ -37,7 +38,7 @@ const ediciones = ordenarEdiciones(await getCollection('boletin', incluirEdicion
                   {edicion.data.ejemplo ? <strong class="insignia">Ejemplo</strong> : null}
                 </p>
                 <h3>
-                  <a href={`/boletin/${edicion.id}`}>{edicion.data.titulo}</a>
+                  <a href={`/boletin/${slugDeEdicion(edicion)}`}>{edicion.data.titulo}</a>
                 </h3>
                 <p>{edicion.data.tema}</p>
                 <p class="suave">{edicion.data.descripcion}</p>

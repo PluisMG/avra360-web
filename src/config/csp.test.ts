@@ -6,7 +6,7 @@ const hash = 'abc123';
 const accionMailerLite = 'https://assets.mailerlite.com/jsonp/1/forms/2/subscribe';
 
 function cspDe(accionFormulario?: string) {
-  return politicaCsp({ hash, accionFormulario });
+  return politicaCsp({ hashes: [hash], accionFormulario });
 }
 
 describe('CSP del formulario de MailerLite', () => {
@@ -26,6 +26,15 @@ describe('CSP del formulario de MailerLite', () => {
   it('toma el host del form action, no un comodín fijo', () => {
     const csp = cspDe('https://static.mailerlite.com/webforms/submit/abc');
     assert.equal(directiva(csp, 'form-action'), "'self' https://static.mailerlite.com");
+  });
+
+  it('incluye cada hash de JSON-LD, en orden estable', () => {
+    const csp = politicaCsp({ hashes: ['bbb', 'aaa', 'bbb'] });
+    const script = directiva(csp, 'script-src') ?? '';
+    assert.ok(script.includes(`'sha256-aaa'`));
+    assert.ok(script.includes(`'sha256-bbb'`));
+    assert.ok(script.indexOf(`'sha256-aaa'`) < script.indexOf(`'sha256-bbb'`));
+    assert.equal(script.split(`'sha256-bbb'`).length - 1, 1);
   });
 
   it('no abre form-action si la URL trae un secreto o no es https', () => {

@@ -18,6 +18,18 @@ export const fragmentosProhibidos = [
   'por confirmar',
   '{{',
   'provisional',
+  'cumple con cofepris',
+  'cumplen con cofepris',
+  'cumplir con cofepris',
+  'sin problemas con cofepris',
+  'sin meterte en problemas',
+  'conformes a cofepris',
+  'conforme a cofepris',
+  '0 % riesgo',
+  '100 % conforme',
+  'agenda llena',
+  'blindaje',
+  'garantizado',
 ] as const;
 
 export function fragmentoProhibido(texto: string) {

@@ -1,8 +1,9 @@
 ---
 import '../styles/global.css';
+import { getCollection } from 'astro:content';
 import { agencia } from '../config/agencia';
 import { vistaPrevia } from '../config/entorno';
-import { jsonLdProfesional, urlCanonica } from '../config/jsonld';
+import { jsonLdOrganizacion, urlCanonica } from '../config/schema';
 import Cabecera from '../components/Cabecera.astro';
 import Consentimiento from '../components/Consentimiento.astro';
 import Pie from '../components/Pie.astro';
@@ -12,13 +13,29 @@ interface Props {
   descripcion: string;
   mensajeWhatsapp: string;
   noindex?: boolean;
+  sufijo?: boolean;
+  ogType?: 'website' | 'article';
+  publicado?: string;
+  jsonLdExtra?: string[];
 }
 
-const { titulo, descripcion, mensajeWhatsapp, noindex = false } = Astro.props;
-const tituloDocumento = `${titulo} | ${agencia.nombre}`;
+const {
+  titulo,
+  descripcion,
+  mensajeWhatsapp,
+  noindex = false,
+  sufijo = true,
+  ogType = 'website',
+  publicado,
+  jsonLdExtra = [],
+} = Astro.props;
+const tituloDocumento = sufijo ? `${titulo} | ${agencia.nombre}` : titulo;
 const canonica = Astro.site ? urlCanonica(Astro.site, Astro.url.pathname) : Astro.url.href;
 const robots = vistaPrevia || noindex ? 'noindex, nofollow' : 'index, follow';
-const jsonLd = jsonLdProfesional(Astro.site?.origin ?? new URL(canonica).origin);
+const paginas = await getCollection('paginas');
+const slugsServicio = paginas.filter((pagina) => pagina.data.tipo === 'servicio').map((pagina) => pagina.data.slug);
+const origen = Astro.site?.origin ?? new URL(canonica).origin;
+const jsonLd = jsonLdOrganizacion(origen, slugsServicio);
 const imagen = new URL('/og.png', canonica).href;
 ---
 
@@ -36,7 +53,9 @@ const imagen = new URL('/og.png', canonica).href;
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="alternate" type="application/rss+xml" title={`Boletín ${agencia.nombre}`} href="/boletin/rss.xml" />
     <meta property="og:locale" content="es_MX" />
-    <meta property="og:type" content="website" />
+    <meta property="og:type" content={ogType} />
+    {ogType === 'article' && publicado && <meta property="article:published_time" content={publicado} />}
+    {ogType === 'article' && <meta property="article:section" content="Boletín" />}
     <meta property="og:site_name" content={agencia.nombre} />
     <meta property="og:title" content={tituloDocumento} />
     <meta property="og:description" content={descripcion} />
@@ -50,6 +69,7 @@ const imagen = new URL('/og.png', canonica).href;
     <meta name="twitter:description" content={descripcion} />
     <meta name="twitter:image" content={imagen} />
     <script type="application/ld+json" set:html={jsonLd} is:inline />
+    {jsonLdExtra.map((bloque) => <script type="application/ld+json" set:html={bloque} is:inline />)}
   </head>
   <body>
     <a class="saltar" href="#contenido">Saltar al contenido</a>

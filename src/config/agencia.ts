@@ -43,19 +43,6 @@ export type PrecioPublico = {
 /** Vacío a propósito. No agregar cifras hasta que estén aprobadas. */
 export const precios: PrecioPublico[] = [];
 
-export const navegacion = [
-  { href: '/', etiqueta: 'Inicio' },
-  { href: '/servicios', etiqueta: 'Servicios' },
-  { href: '/casos/mentalcareclinic', etiqueta: 'Caso' },
-  { href: '/boletin', etiqueta: 'Boletín' },
-  { href: '/contacto', etiqueta: 'Contacto' },
-] as const;
-
-export const navegacionPie = [
-  ...navegacion,
-  { href: '/boletin/rss.xml', etiqueta: 'RSS del boletín' },
-] as const;
-
 export function enlaceWhatsapp(mensaje: string) {
   return `${telefono.whatsappBase}?text=${encodeURIComponent(mensaje)}`;
 }

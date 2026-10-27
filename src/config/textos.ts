@@ -6,34 +6,34 @@
 
 export const seo = {
   inicio: {
-    titulo: 'Marketing para clínicas en Chiapas, con criterio COFEPRIS',
+    titulo: 'Agencia de marketing médico en Tuxtla Gutiérrez',
     descripcion:
-      'Agencia de marketing para clínicas y profesionales de la salud en Chiapas. Estrategia, sitio web y SEO local que respetan la norma de COFEPRIS.',
+      'Marketing para clínicas, consultorios y salud mental en Tuxtla Gutiérrez, Chiapas: estrategia, sitio web y SEO local, con criterio COFEPRIS y sin promesas.',
   },
   servicios: {
     titulo: 'Servicios de marketing para clínicas en Chiapas',
     descripcion:
-      'Estrategia, sitio web, SEO local y campañas para clínicas y profesionales de la salud en Chiapas, con revisión de criterio COFEPRIS.',
+      'Páginas web para médicos, SEO local y Google Maps, revisión COFEPRIS de publicidad y marketing de salud mental para clínicas y consultorios en Chiapas.',
   },
   caso: {
-    titulo: 'Caso MentalCareClinic: marketing de salud mental en Chiapas',
+    titulo: 'Caso MentalCareClinic: sitio y SEO local',
     descripcion:
-      'Cómo trabajamos con MentalCareClinic: diagnóstico, estrategia, sitio nuevo y SEO local. Declaramos que el fundador de la agencia es socio de la clínica.',
+      'Cómo trabajamos el sitio y el SEO local de MentalCareClinic en Tuxtla Gutiérrez: diagnóstico, estrategia, sitio nuevo y Google. Relación declarada.',
   },
   boletin: {
     titulo: 'Boletín de marketing para clínicas en Chiapas',
     descripcion:
-      'Notas breves para clínicas y profesionales de la salud en Chiapas: Google, redes y publicidad dentro de la norma de COFEPRIS.',
+      'Boletín mensual para clínicas y consultorios de Chiapas: Google Maps, publicidad con criterio COFEPRIS e IA. Lea el archivo y suscríbase.',
   },
   contacto: {
-    titulo: 'Contacto: agencia de marketing de salud en Tuxtla',
+    titulo: 'Contacto de MKT Creativa en Tuxtla Gutiérrez, Chiapas',
     descripcion:
-      'Escríbanos por WhatsApp al +52 961 191 9199 para hablar del marketing de su clínica o consultorio en Chiapas. MKT Creativa, Tuxtla Gutiérrez.',
+      'Escríbanos por WhatsApp o llame al +52 961 191 9199. Atendemos clínicas y consultorios en Tuxtla Gutiérrez, Tapachula y San Cristóbal de las Casas.',
   },
   aviso: {
     titulo: 'Aviso de privacidad',
     descripcion:
-      'Borrador de aviso de privacidad de MKT Creativa para datos de contacto y suscriptores del boletín, conforme a la LFPDPPP publicada el 20 de marzo de 2025.',
+      'Aviso de privacidad integral de MKT Creativa para datos de contacto y suscriptores del boletín, conforme a la LFPDPPP.',
   },
   error: {
     titulo: 'Página no encontrada',
@@ -44,7 +44,7 @@ export const seo = {
 
 export const inicio = {
   ceja: 'Agencia de marketing y publicidad para la salud · Tuxtla Gutiérrez, Chiapas',
-  h1: 'Marketing para la salud en Chiapas, dentro de la norma de COFEPRIS',
+  h1: 'Agencia de marketing médico en Tuxtla Gutiérrez',
   lede: 'MKT Creativa acompaña a clínicas, consultorios y profesionales de la salud de Chiapas a darse a conocer con una comunicación clara, ética y apegada a la regulación sanitaria. Estrategia, sitio web y presencia en Google, trabajados por un solo equipo y con el mismo criterio.',
   apoyo:
     'Revisamos cada texto, pieza y anuncio antes de publicarlo: cédula profesional a la vista, nada de promesas de curación ni de resultados, y el aviso o permiso de publicidad identificado antes de difundir.',
@@ -100,22 +100,22 @@ export const inicio = {
   serviciosIntro: 'Cuatro líneas de trabajo que se contratan juntas o por separado. El detalle está en la página de servicios.',
   servicios: [
     {
-      href: '/servicios#estrategia',
+      clave: 'estrategia',
       titulo: 'Estrategia',
       texto: 'Qué decir, a quién y en qué canales, dentro de la norma.',
     },
     {
-      href: '/servicios#sitio-web',
+      clave: 'sitio-web',
       titulo: 'Sitio web',
       texto: 'Rápido, claro, accesible y con su cédula a la vista.',
     },
     {
-      href: '/servicios#seo-local',
+      clave: 'seo-local',
       titulo: 'SEO local y Google',
       texto: 'Que lo encuentren en su ciudad, con datos consistentes.',
     },
     {
-      href: '/servicios#contenido-cofepris',
+      clave: 'contenido-cofepris',
       titulo: 'Contenido y campañas',
       texto: 'Piezas revisadas con criterio COFEPRIS antes de publicarse.',
     },
@@ -136,7 +136,7 @@ export const inicio = {
 } as const;
 
 export const servicios = {
-  h1: 'Servicios de marketing para clínicas y profesionales de la salud',
+  h1: 'Servicios de marketing para clínicas y consultorios en Chiapas',
   lede: 'Cuatro líneas de trabajo que se diseñan juntas para que su comunicación sea clara, coherente y apegada a la regulación sanitaria. Puede contratarlas como un solo encargo o empezar por la que más necesite. Nuestro énfasis está en la salud mental.',
   bloques: [
     {
@@ -148,44 +148,7 @@ export const servicios = {
         'La estrategia identifica desde el inicio qué piezas requieren aviso o permiso de publicidad ante COFEPRIS y qué documentos los respaldan. Si un caso necesita la opinión de un abogado sanitario, se lo decimos antes de producir, no después de publicar.',
       ],
     },
-    {
-      id: 'sitio-web',
-      numero: '02',
-      titulo: 'Sitio web',
-      parrafos: [
-        'Construimos sitios que cargan rápido, se leen bien en el teléfono y pueden usarse con teclado y lector de pantalla. Cada página dice qué servicio ofrece, quién lo presta, dónde y cómo se solicita.',
-        'Incluimos lo que la norma pide y lo que da confianza: nombre de la institución que expidió el título y número de cédula profesional de quien ofrece el servicio, aviso de privacidad y un botón directo a WhatsApp. No usamos contadores de pacientes, testimonios como prueba ni imágenes de antes y después.',
-      ],
-    },
-    {
-      id: 'seo-local',
-      numero: '03',
-      titulo: 'SEO local y Google',
-      parrafos: [
-        'Trabajamos para que su servicio pueda encontrarse en su ciudad: páginas con la especialidad y la ubicación escritas con claridad, una ficha de Google completa y verificada, y datos de contacto idénticos en el sitio, en Google y en los directorios donde ya aparece.',
-        'No ofrecemos “el primer lugar en Google” ni compramos reseñas. Le ayudamos a pedir opiniones de forma legítima y a responderlas sin revelar datos de salud. Cuando medimos avances, los reportamos como datos observados, con su fecha.',
-      ],
-    },
-    {
-      id: 'contenido-cofepris',
-      numero: '04',
-      titulo: 'Contenido y campañas con criterio COFEPRIS',
-      parrafos: [
-        'Textos del sitio, publicaciones en redes, artículos, boletines y anuncios salen del mismo criterio. Cada pieza informa sobre el tipo, las características y la forma de acceder al servicio, sin atribuirle efectos que no se puedan comprobar.',
-        'En campañas pagadas también cuidamos las políticas de Meta y Google para temas de salud, como no aludir a la condición de salud de quien lee el anuncio. Antes de pautar, confirmamos que el aviso o el permiso de publicidad que corresponda esté presentado.',
-      ],
-    },
   ],
-  cofepris: {
-    id: 'cofepris',
-    titulo: 'Cómo trabajamos la publicidad de servicios de salud',
-    parrafos: [
-      'En México, la publicidad de servicios de salud se rige por la Ley General de Salud y por el Reglamento de la Ley General de Salud en Materia de Publicidad, y la vigila la Comisión Federal para la Protección contra Riesgos Sanitarios (COFEPRIS). La ley y el reglamento obligan también a las agencias de publicidad: quien elabora el material debe apegarse al aviso o permiso del anunciante.',
-      'De forma general, la publicidad de un profesional que ejerce de manera individual requiere presentar un aviso de publicidad antes de difundirse, mientras que la de un establecimiento, como una clínica, requiere permiso de publicidad. En ambos casos, la publicidad debe indicar la institución que expidió el título y, en su caso, el número de cédula profesional. Cada caso concreto se confirma con el trámite vigente ante COFEPRIS.',
-      'Por eso nuestro método es concreto: no prometemos resultados ni tiempos de mejoría; no ofrecemos curas; no usamos testimonios de pacientes como prueba de eficacia; no publicamos antes y después; no afirmamos superioridad sobre otros profesionales sin sustento, y guardamos la documentación que respalda cada afirmación. Si una pieza requiere aviso o permiso, se lo señalamos y preparamos el material para el trámite.',
-      'Este texto describe el criterio de trabajo de la agencia. No es un dictamen jurídico ni una autorización sanitaria: el permiso lo otorga la autoridad y un abogado sanitario puede confirmar su caso particular.',
-    ],
-  },
   cierreTitulo: 'Conversemos sobre su clínica o consultorio',
   cierreTexto:
     'Cuéntenos su especialidad, la ciudad donde atiende y si ya tiene sitio web o ficha de Google. Le respondemos con una propuesta clara de por dónde empezar.',
@@ -284,9 +247,6 @@ export const errorPagina = {
   h1: 'Esta página no existe',
   lede: 'Es posible que el enlace haya cambiado. Puede volver al inicio, ver nuestros servicios o escribirnos por WhatsApp.',
 } as const;
-
-export const jsonLdDescripcion =
-  'Agencia de marketing y publicidad para clínicas y profesionales de la salud en Chiapas. Estrategia, sitio web y SEO local con criterio de cumplimiento de la regulación sanitaria (COFEPRIS) y énfasis en salud mental. No promete resultados.';
 
 export const pie = {
   linea:

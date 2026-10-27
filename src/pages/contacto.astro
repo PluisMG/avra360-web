@@ -6,7 +6,12 @@ import Base from '../layouts/Base.astro';
 import { contacto, seo } from '../config/textos';
 ---
 
-<Base titulo={seo.contacto.titulo} descripcion={seo.contacto.descripcion} mensajeWhatsapp={mensajesWhatsapp.contacto}>
+<Base
+  titulo={seo.contacto.titulo}
+  descripcion={seo.contacto.descripcion}
+  mensajeWhatsapp={mensajesWhatsapp.contacto}
+  sufijo={false}
+>
   <div class="contenedor seccion">
     <Migas pasos={[{ href: '/', etiqueta: 'Inicio' }, { etiqueta: 'Contacto' }]} />
     <h1>{contacto.h1}</h1>

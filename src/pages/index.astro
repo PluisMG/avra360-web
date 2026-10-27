@@ -1,8 +1,12 @@
 ---
+import { getCollection } from 'astro:content';
 import EnlaceWhatsapp from '../components/EnlaceWhatsapp.astro';
 import { mensajesWhatsapp } from '../config/agencia';
+import { hrefTarjetaInicio } from '../config/paginas';
 import Base from '../layouts/Base.astro';
 import { inicio, seo } from '../config/textos';
+
+const publicados = new Set((await getCollection('paginas')).map((pagina) => pagina.data.slug));
 ---
 
 <Base titulo={seo.inicio.titulo} descripcion={seo.inicio.descripcion} mensajeWhatsapp={mensajesWhatsapp.inicio}>
@@ -74,7 +78,7 @@ import { inicio, seo } from '../config/textos';
         {
           inicio.servicios.map((servicio) => (
             <li>
-              <a href={servicio.href}>
+              <a href={hrefTarjetaInicio(servicio.clave, publicados)}>
                 <span>
                   <strong>{servicio.titulo}</strong>
                   <span class="suave">{servicio.texto}</span>

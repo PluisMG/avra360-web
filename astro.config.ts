@@ -6,9 +6,17 @@ import sitemap from '@astrojs/sitemap';
 import type { AstroIntegration } from 'astro';
 import { defineConfig, envField } from 'astro/config';
 import { politicaCsp } from './src/config/csp';
+import { mapaLastmodBoletin } from './src/config/ediciones-sitemap';
 import { revisarDirectorioPublico } from './src/config/publicacion';
 
 const sitio = resolverSitio(process.env.SITE ?? 'https://mktcreativa.example');
+const directorioBoletin = path.join(path.dirname(fileURLToPath(import.meta.url)), 'src/content/boletin');
+
+let cacheLastmod: Promise<Map<string, string>> | undefined;
+function fechasDeEdiciones() {
+  cacheLastmod ??= mapaLastmodBoletin(directorioBoletin);
+  return cacheLastmod;
+}
 
 function resolverSitio(valor: string) {
   let url: URL;
@@ -49,33 +57,37 @@ function encabezadosCloudflare(): AstroIntegration {
           throw new Error(`No se encontró index.html en ${raiz} para calcular la CSP.`);
         }
 
-        let jsonLd = '';
+        const cuerposJsonLd = new Set<string>();
         for (const archivo of paginas) {
           const html = await readFile(archivo, 'utf8');
           const scripts = [...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)];
           for (const script of scripts) {
             const atributos = script[1] ?? '';
             const cuerpo = script[2] ?? '';
-            const esJsonLd = /type="application\/ld\+json"/.test(atributos);
+            const esJsonLd = /type=["']application\/ld\+json["']/.test(atributos);
             const esExterno = /\bsrc=/.test(atributos);
             if (esExterno) continue;
             if (!esJsonLd) {
               throw new Error(`Hay un script en línea no permitido en ${archivo}. La CSP solo admite el JSON-LD.`);
             }
-            if (!jsonLd) jsonLd = cuerpo;
-            else if (cuerpo !== jsonLd) {
-              throw new Error('El JSON-LD cambió entre páginas y el hash de la CSP dejaría de coincidir.');
+            if (!cuerpo.trim()) throw new Error(`JSON-LD vacío en ${archivo}.`);
+            try {
+              JSON.parse(cuerpo);
+            } catch {
+              throw new Error(`El JSON-LD de ${archivo} no se puede leer como JSON.`);
             }
+            if (cuerpo.includes('{{')) throw new Error(`El JSON-LD de ${archivo} trae un marcador {{.`);
+            cuerposJsonLd.add(cuerpo);
           }
           if (/<style[\s>]/i.test(html)) {
             throw new Error(`Hay un <style> en ${archivo}. El build deja el CSS en archivos para poder usar style-src 'self'.`);
           }
         }
 
-        if (!jsonLd) throw new Error('No se encontró el JSON-LD.');
-        const hash = createHash('sha256').update(jsonLd, 'utf8').digest('base64');
+        if (cuerposJsonLd.size === 0) throw new Error('No se encontró el JSON-LD.');
+        const hashes = [...cuerposJsonLd].map((cuerpo) => createHash('sha256').update(cuerpo, 'utf8').digest('base64'));
         const csp = politicaCsp({
-          hash,
+          hashes,
           accionFormulario: process.env.PUBLIC_MAILERLITE_FORM_ACTION,
         });
 
@@ -123,6 +135,13 @@ export default defineConfig({
         if (url.pathname.includes('/boletin/ejemplo-')) return false;
         if (url.pathname.includes('/aviso-de-privacidad')) return false;
         return true;
+      },
+      async serialize(item) {
+        const mapa = await fechasDeEdiciones();
+        const ruta = new URL(item.url).pathname.replace(/\/$/, '') || '/';
+        const fecha = mapa.get(ruta);
+        if (!fecha) return item;
+        return { ...item, lastmod: fecha };
       },
     }),
     encabezadosCloudflare(),

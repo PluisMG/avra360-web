@@ -1,10 +1,23 @@
 ---
+import { getCollection } from 'astro:content';
 import BloquePrecios from '../components/BloquePrecios.astro';
 import EnlaceWhatsapp from '../components/EnlaceWhatsapp.astro';
 import Migas from '../components/Migas.astro';
 import { mensajesWhatsapp } from '../config/agencia';
+import { catalogoServicios } from '../config/paginas';
 import Base from '../layouts/Base.astro';
-import { seo, servicios } from '../config/textos';
+import { inicio, seo, servicios } from '../config/textos';
+
+const paginas = await getCollection('paginas');
+const porSlug = new Map(paginas.map((pagina) => [pagina.data.slug, pagina]));
+const publicados = catalogoServicios.filter((servicio) => porSlug.has(servicio.slug));
+const guia = porSlug.get('cofepris');
+const resumen = new Map(inicio.servicios.map((tarjeta) => [tarjeta.clave, tarjeta]));
+const resumenPorSlug: Record<string, { titulo: string; texto: string } | undefined> = {
+  'paginas-web-para-medicos': resumen.get('sitio-web'),
+  'seo-local-google-maps': resumen.get('seo-local'),
+  'publicidad-medica-cofepris': resumen.get('contenido-cofepris'),
+};
 ---
 
 <Base titulo={seo.servicios.titulo} descripcion={seo.servicios.descripcion} mensajeWhatsapp={mensajesWhatsapp.servicios}>
@@ -28,15 +41,34 @@ import { seo, servicios } from '../config/textos';
     ))
   }
 
-  <section class="seccion seccion--banda" id={servicios.cofepris.id} aria-labelledby="cofepris-titulo">
-    <div class="contenedor prosa">
-      <h2 id="cofepris-titulo">{servicios.cofepris.titulo}</h2>
-      {servicios.cofepris.parrafos.map((parrafo) => <p>{parrafo}</p>)}
-      <p>
-        <a href="https://www.gob.mx/cofepris">Sitio institucional de COFEPRIS</a>
-      </p>
-    </div>
-  </section>
+  {
+    publicados.map((servicio) => {
+      const pagina = porSlug.get(servicio.slug);
+      const corto = resumenPorSlug[servicio.slug];
+      return (
+        <section class="seccion" aria-labelledby={`${servicio.slug}-titulo`}>
+          <div class="contenedor">
+            <h2 id={`${servicio.slug}-titulo`}>
+              <a href={`/servicios/${servicio.slug}`}>{corto?.titulo ?? pagina?.data.h1}</a>
+            </h2>
+            {corto && <p>{corto.texto}</p>}
+          </div>
+        </section>
+      );
+    })
+  }
+
+  {
+    guia && (
+      <section class="seccion seccion--banda" aria-labelledby="guia-cofepris">
+        <div class="contenedor">
+          <h2 id="guia-cofepris">
+            <a href="/guias/cofepris">{guia.data.h1}</a>
+          </h2>
+        </div>
+      </section>
+    )
+  }
 
   <BloquePrecios />
 

@@ -46,7 +46,30 @@ const boletin = defineCollection({
       etiqueta: z.string().min(4, 'Falta la etiqueta del botón o enlace.'),
     }),
     ejemplo: z.boolean().default(false),
+    slug: z
+      .string()
+      .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'El slug solo usa minúsculas, números y guiones.')
+      .optional(),
+    modificado: fechaDeEdicion.optional(),
+    autor: z.string().min(3, 'El autor necesita un nombre.').optional(),
+    fuentes: z
+      .array(z.string().refine((valor) => valor.startsWith('https://'), 'Cada fuente debe ser una URL https.'))
+      .optional(),
+    palabras: z.array(z.string().min(2)).max(12, 'Doce palabras clave como máximo.').optional(),
+    sufijo: z.boolean().optional(),
   }),
 });
 
-export const collections = { boletin };
+const paginas = defineCollection({
+  loader: glob({ base: './src/content/paginas', pattern: '**/*.md' }),
+  schema: z.object({
+    slug: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'El slug solo usa minúsculas, números y guiones.'),
+    tipo: z.enum(['servicio', 'guia', 'nosotros']),
+    titulo: z.string().min(12, 'El título SEO necesita al menos 12 caracteres.').max(80),
+    descripcion: z.string().min(50, 'La meta descripción necesita al menos 50 caracteres.').max(180),
+    h1: z.string().min(12).max(120),
+    sufijo: z.boolean().optional(),
+  }),
+});
+
+export const collections = { boletin, paginas };

@@ -210,6 +210,31 @@ a:hover {
   text-decoration-thickness: 2px;
 }
 
+.submenu {
+  position: relative;
+}
+
+.submenu > summary {
+  border: 0;
+  border-radius: 0;
+  padding-inline: 0.2rem;
+  background: transparent;
+  color: var(--tinta);
+  font-weight: 650;
+}
+
+.submenu__panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding-block: 0.2rem 0.6rem;
+}
+
+.submenu__panel a {
+  min-height: 48px;
+  padding-inline: 0.8rem;
+}
+
 .boton {
   display: inline-flex;
   align-items: center;
@@ -779,8 +804,20 @@ input::placeholder {
     grid-row: 1;
   }
 
-  .menu summary {
+  .menu > summary {
     display: none;
+  }
+
+  .submenu[open] .submenu__panel {
+    position: absolute;
+    top: calc(100% + 0.35rem);
+    left: 0;
+    z-index: 20;
+    min-width: 16rem;
+    padding: 0.4rem;
+    background: var(--papel);
+    border: 1px solid var(--linea);
+    border-radius: 0.6rem;
   }
 
   .menu .enlaces {
@@ -834,9 +871,15 @@ input::placeholder {
 
 @media print {
   .consentimiento,
-  .menu summary,
+  .menu > summary,
+  .submenu > summary,
   .boton--cabecera {
     display: none;
+  }
+
+  .submenu__panel {
+    display: flex !important;
+    position: static;
   }
 
   body {

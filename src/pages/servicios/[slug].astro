@@ -1,0 +1,61 @@
+---
+import { getCollection, render } from 'astro:content';
+import EnlaceWhatsapp from '../../components/EnlaceWhatsapp.astro';
+import Migas from '../../components/Migas.astro';
+import { mensajesWhatsapp } from '../../config/agencia';
+import { exigirPaginasConocidas, servicioDeSlug } from '../../config/paginas';
+import { jsonLdServicio } from '../../config/schema';
+import { inicio } from '../../config/textos';
+import Base from '../../layouts/Base.astro';
+
+export async function getStaticPaths() {
+  const paginas = await getCollection('paginas');
+  exigirPaginasConocidas(paginas);
+  return paginas
+    .filter((pagina) => pagina.data.tipo === 'servicio')
+    .map((pagina) => ({
+      params: { slug: pagina.data.slug },
+      props: { pagina },
+    }));
+}
+
+const { pagina } = Astro.props;
+const servicio = servicioDeSlug(pagina.data.slug);
+if (!servicio) throw new Error(`Falta el servicio ${pagina.data.slug} en el catálogo.`);
+const { Content } = await render(pagina);
+const guia = (await getCollection('paginas')).find((item) => item.data.slug === 'cofepris');
+const origen = Astro.site?.origin;
+if (!origen) throw new Error('El build necesita SITE para el JSON-LD de la página de servicio.');
+const jsonLdExtra = [jsonLdServicio(origen, servicio, pagina.data.descripcion, pagina.data.h1)];
+---
+
+<Base
+  titulo={pagina.data.titulo}
+  descripcion={pagina.data.descripcion}
+  mensajeWhatsapp={mensajesWhatsapp.servicios}
+  sufijo={pagina.data.sufijo !== false}
+  jsonLdExtra={jsonLdExtra}
+>
+  <article class="contenedor seccion">
+    <Migas
+      pasos={[
+        { href: '/', etiqueta: 'Inicio' },
+        { href: '/servicios', etiqueta: 'Servicios' },
+        { etiqueta: pagina.data.h1 },
+      ]}
+    />
+    <h1>{pagina.data.h1}</h1>
+    <div class="prosa">
+      <Content />
+      {guia && (
+        <p>
+          <a href="/guias/cofepris">{guia.data.h1}</a>
+        </p>
+      )}
+      <p>
+        <a href="/casos/mentalcareclinic">{inicio.casoEnlace}</a>
+      </p>
+    </div>
+    <EnlaceWhatsapp mensaje={mensajesWhatsapp.servicios} />
+  </article>
+</Base>

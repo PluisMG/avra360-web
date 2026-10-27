@@ -31,13 +31,20 @@ export function clasificarAccionFormulario(accion: string | undefined): AccionFo
   return { lista: true, action: url.toString(), origen: url.origin };
 }
 
-export function politicaCsp(opciones: { hash: string; accionFormulario?: string }) {
+export function politicaCsp(opciones: { hashes: readonly string[]; accionFormulario?: string }) {
   const accion = clasificarAccionFormulario(opciones.accionFormulario);
   const formAction = accion.lista ? `'self' ${accion.origen}` : `'self'`;
+  const hashes = [...new Set(opciones.hashes)].sort();
+  const scriptSrc = [
+    "'self'",
+    ...hashes.map((hash) => `'sha256-${hash}'`),
+    'https://www.googletagmanager.com',
+    'https://connect.facebook.net',
+  ].join(' ');
 
   return [
     "default-src 'self'",
-    `script-src 'self' 'sha256-${opciones.hash}' https://www.googletagmanager.com https://connect.facebook.net`,
+    `script-src ${scriptSrc}`,
     "style-src 'self'",
     "img-src 'self' data: https://www.google-analytics.com https://www.googletagmanager.com https://www.facebook.com",
     "connect-src 'self' https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com https://connect.facebook.net https://www.facebook.com",
