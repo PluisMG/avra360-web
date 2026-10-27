@@ -1,0 +1,53 @@
+---
+import { getCollection } from 'astro:content';
+import { catalogoServicios } from '../config/paginas';
+
+interface Props {
+  clase?: string;
+}
+
+const { clase = 'enlaces' } = Astro.props;
+const ruta = Astro.url.pathname === '/' ? '/' : Astro.url.pathname.replace(/\/$/, '');
+const slugs = new Set((await getCollection('paginas')).map((pagina) => pagina.data.slug));
+const servicios = catalogoServicios.filter((servicio) => slugs.has(servicio.slug));
+const guia = slugs.has('cofepris');
+const nosotros = slugs.has('nosotros');
+
+function activo(href: string) {
+  if (href === '/') return ruta === '/';
+  return ruta === href || ruta.startsWith(`${href}/`);
+}
+---
+
+<nav class={clase} aria-label="Principal">
+  <a href="/" aria-current={activo('/') ? 'page' : undefined}>Inicio</a>
+  {
+    servicios.length > 0 ? (
+      <details class="submenu">
+        <summary>Servicios</summary>
+        <div class="submenu__panel">
+          <a href="/servicios" aria-current={ruta === '/servicios' ? 'page' : undefined}>
+            Todos los servicios
+          </a>
+          {servicios.map((servicio) => (
+            <a
+              href={`/servicios/${servicio.slug}`}
+              aria-current={ruta === `/servicios/${servicio.slug}` ? 'page' : undefined}
+            >
+              {servicio.menu}
+            </a>
+          ))}
+        </div>
+      </details>
+    ) : (
+      <a href="/servicios" aria-current={activo('/servicios') ? 'page' : undefined}>
+        Servicios
+      </a>
+    )
+  }
+  {guia && <a href="/guias/cofepris" aria-current={activo('/guias') ? 'page' : undefined}>Guías COFEPRIS</a>}
+  <a href="/casos/mentalcareclinic" aria-current={activo('/casos/mentalcareclinic') ? 'page' : undefined}>Caso</a>
+  <a href="/boletin" aria-current={activo('/boletin') ? 'page' : undefined}>Boletín</a>
+  {nosotros && <a href="/nosotros" aria-current={activo('/nosotros') ? 'page' : undefined}>Nosotros</a>}
+  <a href="/contacto" aria-current={activo('/contacto') ? 'page' : undefined}>Contacto</a>
+</nav>

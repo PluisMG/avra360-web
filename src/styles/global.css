@@ -215,6 +215,9 @@ a:hover {
 }
 
 .submenu > summary {
+  display: inline-flex;
+  align-items: center;
+  min-height: 48px;
   border: 0;
   border-radius: 0;
   padding-inline: 0.2rem;
@@ -223,11 +226,19 @@ a:hover {
   font-weight: 650;
 }
 
+.submenu:not([open]) > .submenu__panel {
+  display: none;
+}
+
 .submenu__panel {
   display: flex;
   flex-direction: column;
   gap: 0.15rem;
   padding-block: 0.2rem 0.6rem;
+}
+
+.enlaces--escritorio {
+  display: none;
 }
 
 .submenu__panel a {
@@ -804,8 +815,19 @@ input::placeholder {
     grid-row: 1;
   }
 
-  .menu > summary {
+  .menu {
     display: none;
+  }
+
+  .enlaces--escritorio {
+    display: flex;
+    grid-column: 2;
+    grid-row: 1;
+    flex-direction: row;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 0.35rem 1rem;
+    padding: 0;
   }
 
   .submenu[open] .submenu__panel {
@@ -818,15 +840,6 @@ input::placeholder {
     background: var(--papel);
     border: 1px solid var(--linea);
     border-radius: 0.6rem;
-  }
-
-  .menu .enlaces {
-    display: flex !important;
-    flex-direction: row;
-    justify-content: flex-end;
-    align-items: center;
-    gap: 0.35rem 1rem;
-    padding: 0;
   }
 
   .hero {
@@ -871,9 +884,16 @@ input::placeholder {
 
 @media print {
   .consentimiento,
-  .menu > summary,
-  .submenu > summary,
+  .menu,
   .boton--cabecera {
+    display: none;
+  }
+
+  .enlaces--escritorio {
+    display: flex !important;
+  }
+
+  .submenu > summary {
     display: none;
   }
 
