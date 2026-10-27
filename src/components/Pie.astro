@@ -1,0 +1,46 @@
+---
+import { agencia, enlaceWhatsapp, navegacionPie, telefono } from '../config/agencia';
+import FormularioBoletin from './FormularioBoletin.astro';
+
+interface Props {
+  mensaje: string;
+}
+
+const { mensaje } = Astro.props;
+const anio = 2026;
+---
+
+<footer class="pie">
+  <div class="contenedor pie__rejilla">
+    <div>
+      <h2>Contacto</h2>
+      <p>
+        {agencia.nombre}. {agencia.responsable}.<br />
+        {agencia.ciudad}, {agencia.estado}, {agencia.pais}.
+      </p>
+      <p>
+        <a href={telefono.tel}>Llamar al {telefono.visible}</a><br />
+        <a href={enlaceWhatsapp(mensaje)}>WhatsApp {telefono.visible}</a>
+      </p>
+      <nav aria-label="Pie">
+        <ul>
+          {
+            navegacionPie.map((item) => (
+              <li>
+                <a href={item.href}>{item.etiqueta}</a>
+              </li>
+            ))
+          }
+          <li><a id="consent-reabrir" href="#consentimiento">Preferencias de cookies</a></li>
+        </ul>
+      </nav>
+    </div>
+    <FormularioBoletin identificador="suscripcion-pie" />
+  </div>
+  <div class="contenedor legal">
+    <p>MKT Creativa no atiende pacientes ni recibe datos clínicos.</p>
+    <p>
+      Textos provisionales al 27 de octubre de 2026. {agencia.nombre} © {anio}.
+    </p>
+  </div>
+</footer>

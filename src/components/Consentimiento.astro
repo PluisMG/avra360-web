@@ -1,0 +1,26 @@
+---
+import { idGa4, idPixelMeta } from '../config/entorno';
+
+const ga = idGa4();
+const pixel = idPixelMeta();
+---
+
+<section
+  class="consentimiento"
+  id="consentimiento"
+  aria-labelledby="consent-titulo"
+  data-ga={ga}
+  data-pixel={pixel}
+>
+  <div class="contenedor">
+    <h2 id="consent-titulo">Cookies de analítica</h2>
+    <p>
+      Este sitio no carga Google Analytics ni el píxel de Meta hasta que usted acepte. Si no hay identificadores
+      configurados, aceptar no instala nada. Rechazarlos no cambia el uso de las páginas.
+    </p>
+    <div class="acciones">
+      <button class="boton" type="button" id="consent-aceptar">Aceptar analítica</button>
+      <button class="boton boton--secundario" type="button" id="consent-rechazar">Rechazar</button>
+    </div>
+  </div>
+</section>

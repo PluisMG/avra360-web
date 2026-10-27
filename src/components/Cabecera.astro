@@ -1,0 +1,43 @@
+---
+import { agencia, navegacion } from '../config/agencia';
+import EnlaceWhatsapp from './EnlaceWhatsapp.astro';
+
+interface Props {
+  mensaje: string;
+}
+
+const { mensaje } = Astro.props;
+const ruta = Astro.url.pathname === '/' ? '/' : Astro.url.pathname.replace(/\/$/, '');
+
+function activo(href: string) {
+  if (href === '/') return ruta === '/';
+  return ruta === href || ruta.startsWith(`${href}/`);
+}
+---
+
+<header class="cabecera">
+  <div class="cabecera__barra contenedor">
+    <a class="marca" href="/" aria-current={ruta === '/' ? 'page' : undefined}>
+      <svg class="marca__signo" width="36" height="36" viewBox="0 0 36 36" aria-hidden="true">
+        <rect width="36" height="36" rx="8" fill="#143f38"></rect>
+        <path fill="#f3eee6" d="M9 26V11h3.2l5.8 9.1L23.8 11H27v15h-2.8v-9.2L19.4 24h-2.8l-4.8-7.2V26H9z"></path>
+      </svg>
+      <span>{agencia.nombre}</span>
+    </a>
+    <div class="cabecera__acciones">
+      <EnlaceWhatsapp mensaje={mensaje} etiqueta="WhatsApp" variante="cabecera" />
+      <details class="menu">
+        <summary>Menú</summary>
+        <nav class="enlaces" aria-label="Principal">
+          {
+            navegacion.map((item) => (
+              <a href={item.href} aria-current={activo(item.href) ? 'page' : undefined}>
+                {item.etiqueta}
+              </a>
+            ))
+          }
+        </nav>
+      </details>
+    </div>
+  </div>
+</header>

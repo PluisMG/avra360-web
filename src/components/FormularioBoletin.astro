@@ -1,0 +1,92 @@
+---
+import { formularioBoletin } from '../config/entorno';
+import { avisoCorto } from '../config/textos';
+import Texto from './Texto.astro';
+
+interface Props {
+  identificador: string;
+}
+
+const { identificador } = Astro.props;
+const formulario = formularioBoletin();
+const ayuda = `${identificador}-ayuda`;
+---
+
+<div class="formulario" id={identificador}>
+  <h2>Recibir el boletín</h2>
+  {
+    formulario.listo ? (
+      <>
+        <form method="post" action={formulario.action} aria-describedby={ayuda}>
+          <fieldset>
+            <legend class="solo-lectores">Datos para recibir el boletín</legend>
+        <p id={ayuda}>
+          El formulario se envía a MailerLite, el servicio previsto para el boletín. Sale los días 1 y 15.
+        </p>
+        <p>
+          <Texto texto={avisoCorto} />
+        </p>
+        <label class="campo">
+          <span>Nombre</span>
+          <input type="text" name={formulario.campoNombre} autocomplete="name" required maxlength="80" />
+        </label>
+        <label class="campo">
+          <span>Correo electrónico</span>
+          <input
+            type="email"
+            name={formulario.campoCorreo}
+            autocomplete="email"
+            inputmode="email"
+            required
+            maxlength="120"
+          />
+        </label>
+        <label class="casilla">
+          <input
+            type="checkbox"
+            required
+            name={formulario.campoConsentimiento}
+            value="si"
+          />
+          <span>Acepto que mi nombre y mi correo se usen para recibir el boletín.</span>
+        </label>
+            <button class="boton" type="submit">Suscribirme</button>
+          </fieldset>
+        </form>
+        <p><a href="/aviso-de-privacidad">Leer el aviso de privacidad</a></p>
+      </>
+    ) : (
+      <>
+        <p id={ayuda} role="status">
+          {formulario.motivo === 'parece-secreto'
+            ? 'La suscripción está desactivada: la URL configurada parece incluir un secreto. No se enviará nada. Use solo la URL pública del formulario, nunca la API key.'
+            : formulario.motivo === 'url-invalida'
+              ? 'La suscripción está desactivada: la URL del formulario no es una dirección https válida. No se enviará nada.'
+              : 'La suscripción está desactivada. Falta la URL pública del formulario de MailerLite. No se enviará nada y el botón no funciona.'}
+        </p>
+        <p>
+          <Texto texto={avisoCorto} />
+        </p>
+        <form aria-describedby={ayuda} aria-disabled="true">
+          <fieldset disabled>
+            <legend class="solo-lectores">Suscripción no disponible</legend>
+            <label class="campo">
+              <span>Nombre</span>
+              <input type="text" autocomplete="name" />
+            </label>
+            <label class="campo">
+              <span>Correo electrónico</span>
+              <input type="email" autocomplete="email" inputmode="email" />
+            </label>
+            <label class="casilla">
+              <input type="checkbox" />
+              <span>Acepto que mi nombre y mi correo se usen para recibir el boletín.</span>
+            </label>
+            <button class="boton" type="submit" disabled>Suscripción no disponible</button>
+          </fieldset>
+        </form>
+        <p><a href="/aviso-de-privacidad">Leer el aviso de privacidad</a></p>
+      </>
+    )
+  }
+</div>

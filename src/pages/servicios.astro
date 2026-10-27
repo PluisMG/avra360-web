@@ -1,0 +1,53 @@
+---
+import BloquePrecios from '../components/BloquePrecios.astro';
+import EnlaceWhatsapp from '../components/EnlaceWhatsapp.astro';
+import Migas from '../components/Migas.astro';
+import { mensajesWhatsapp } from '../config/agencia';
+import Base from '../layouts/Base.astro';
+import { seo, servicios } from '../config/textos';
+---
+
+<Base titulo={seo.servicios.titulo} descripcion={seo.servicios.descripcion} mensajeWhatsapp={mensajesWhatsapp.servicios}>
+  <div class="contenedor">
+    <Migas pasos={[{ href: '/', etiqueta: 'Inicio' }, { etiqueta: 'Servicios' }]} />
+    <h1>{servicios.h1}</h1>
+    <p class="lede">{servicios.lede}</p>
+  </div>
+
+  {
+    servicios.bloques.map((bloque) => (
+      <section class="seccion" id={bloque.id} aria-labelledby={`${bloque.id}-titulo`}>
+        <div class="contenedor">
+          <p class="paso__num">{bloque.numero}</p>
+          <h2 id={`${bloque.id}-titulo`}>{bloque.titulo}</h2>
+          {bloque.parrafos.map((parrafo) => (
+            <p class="prosa">{parrafo}</p>
+          ))}
+        </div>
+      </section>
+    ))
+  }
+
+  <section class="seccion seccion--banda" id={servicios.cofepris.id} aria-labelledby="cofepris-titulo">
+    <div class="contenedor prosa">
+      <h2 id="cofepris-titulo">{servicios.cofepris.titulo}</h2>
+      {servicios.cofepris.parrafos.map((parrafo) => <p>{parrafo}</p>)}
+      <p>
+        <a href="https://www.gob.mx/cofepris">Sitio institucional de COFEPRIS</a>
+      </p>
+    </div>
+  </section>
+
+  <BloquePrecios />
+
+  <section class="seccion" aria-labelledby="servicios-cierre">
+    <div class="contenedor">
+      <h2 id="servicios-cierre">Conversar sobre un servicio de salud en Chiapas</h2>
+      <p>
+        Cuéntenos la especialidad, la ciudad y si ya tiene sitio. La respuesta no incluye una promesa de pacientes ni un
+        precio que todavía no está aprobado.
+      </p>
+      <EnlaceWhatsapp mensaje={mensajesWhatsapp.servicios} />
+    </div>
+  </section>
+</Base>

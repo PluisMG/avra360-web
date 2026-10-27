@@ -1,0 +1,57 @@
+---
+import Migas from '../components/Migas.astro';
+import Texto from '../components/Texto.astro';
+import { mensajesWhatsapp } from '../config/agencia';
+import { aviso, bloquesAviso } from '../config/aviso';
+import { formatearFecha } from '../config/fechas';
+import Base from '../layouts/Base.astro';
+import { seo } from '../config/textos';
+---
+
+<Base titulo={seo.aviso.titulo} descripcion={seo.aviso.descripcion} mensajeWhatsapp={mensajesWhatsapp.aviso}>
+  <div class="contenedor seccion prosa">
+    <Migas pasos={[{ href: '/', etiqueta: 'Inicio' }, { etiqueta: 'Aviso de privacidad' }]} />
+    <p class="aviso-borrador" role="note">
+      <strong>Borrador para revisión legal.</strong> No use este texto como aviso definitivo hasta sustituir los
+      marcadores y hasta que lo revise un abogado. Los datos entre corchetes están pendientes.
+    </p>
+    <h1>Aviso de privacidad integral</h1>
+    <p>
+      Borrador del {formatearFecha(aviso.fechaBorrador)}. Se redactó con la {aviso.ley}
+    </p>
+    <p>
+      <a href={aviso.leyUrl}>Texto de la LFPDPPP en el sitio de la Cámara de Diputados (PDF)</a>
+    </p>
+    <h2>Contenido</h2>
+    <ol class="indice">
+      {
+        bloquesAviso.map((bloque) => (
+          <li>
+            <a href={`#${bloque.id}`}>{bloque.titulo}</a>
+          </li>
+        ))
+      }
+    </ol>
+    {
+      bloquesAviso.map((bloque) => (
+        <section id={bloque.id} aria-labelledby={`${bloque.id}-titulo`}>
+          <h2 id={`${bloque.id}-titulo`}>{bloque.titulo}</h2>
+          {bloque.parrafos?.map((parrafo) => (
+            <p>
+              <Texto texto={parrafo} />
+            </p>
+          ))}
+          {bloque.lista ? (
+            <ul>
+              {bloque.lista.map((punto) => (
+                <li>
+                  <Texto texto={punto} />
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </section>
+      ))
+    }
+  </div>
+</Base>

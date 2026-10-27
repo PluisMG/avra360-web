@@ -1,0 +1,71 @@
+---
+import { getCollection, render } from 'astro:content';
+import Migas from '../../components/Migas.astro';
+import { mensajesWhatsapp } from '../../config/agencia';
+import { incluirEdicion } from '../../config/boletin';
+import { formatearFecha } from '../../config/fechas';
+import Base from '../../layouts/Base.astro';
+
+export async function getStaticPaths() {
+  const ediciones = await getCollection('boletin', incluirEdicion);
+  return ediciones.map((edicion) => ({
+    params: { slug: edicion.id },
+    props: { edicion },
+  }));
+}
+
+const { edicion } = Astro.props;
+const { Content } = await render(edicion);
+const mensaje = edicion.data.ejemplo
+  ? mensajesWhatsapp.ejemplo
+  : `Hola. Leí la edición «${edicion.data.titulo}» del boletín de MKT Creativa.`;
+---
+
+<Base
+  titulo={edicion.data.titulo}
+  descripcion={edicion.data.descripcion}
+  mensajeWhatsapp={mensaje}
+  noindex={edicion.data.ejemplo}
+>
+  <article class="contenedor seccion">
+    <Migas
+      pasos={[
+        { href: '/', etiqueta: 'Inicio' },
+        { href: '/boletin', etiqueta: 'Boletín' },
+        { etiqueta: edicion.data.titulo },
+      ]}
+    />
+    <p class="ceja">
+      <time datetime={edicion.data.fecha}>{formatearFecha(edicion.data.fecha)}</time>
+      · {edicion.data.tema}
+    </p>
+    <h1>{edicion.data.titulo}</h1>
+    {
+      edicion.data.ejemplo && (
+        <p class="aviso-ejemplo" role="note">
+          <strong>Edición de ejemplo, no publicada.</strong> Sirve para mostrar el formato. No reporta clientes,
+          campañas ni resultados.
+        </p>
+      )
+    }
+    <div class="prosa">
+      <Content />
+    </div>
+    <h2>Notas</h2>
+    <ul class="notas">
+      {
+        edicion.data.notas.map((nota) => (
+          <li>
+            <h3>{nota.titulo}</h3>
+            <p>{nota.texto}</p>
+          </li>
+        ))
+      }
+    </ul>
+    <aside class="llamado">
+      <h2>Llamado a la acción</h2>
+      <p>{edicion.data.llamado.texto}</p>
+      <a class="boton" href={edicion.data.llamado.enlace}>{edicion.data.llamado.etiqueta}</a>
+    </aside>
+  </article>
+</Base>

@@ -1,0 +1,63 @@
+---
+import EnlaceWhatsapp from '../../components/EnlaceWhatsapp.astro';
+import Migas from '../../components/Migas.astro';
+import { mensajesWhatsapp } from '../../config/agencia';
+import Base from '../../layouts/Base.astro';
+import { caso, seo } from '../../config/textos';
+---
+
+<Base titulo={seo.caso.titulo} descripcion={seo.caso.descripcion} mensajeWhatsapp={mensajesWhatsapp.caso}>
+  <article class="contenedor seccion">
+    <Migas pasos={[{ href: '/', etiqueta: 'Inicio' }, { etiqueta: 'Caso' }]} />
+    <h1>{caso.h1}</h1>
+    <p class="lede">{caso.lede}</p>
+    <aside class="aviso-relacion" role="note">
+      <p><strong>Relación con la clínica.</strong> {caso.relacion}</p>
+    </aside>
+
+    <h2>{caso.fasesTitulo}</h2>
+    <ol class="fases">
+      {
+        caso.fases.map((fase, indice) => (
+          <li class="fase">
+            <h3>
+              {indice + 1}. {fase.titulo}
+            </h3>
+            <p>{fase.texto}</p>
+          </li>
+        ))
+      }
+    </ol>
+
+    <h2>{caso.metricasTitulo}</h2>
+    <p>{caso.metricasIntro}</p>
+    <div class="tabla-wrap">
+      <table>
+        <caption>Indicadores reservados para mediciones reales</caption>
+        <thead>
+          <tr>
+            <th scope="col">Indicador</th>
+            <th scope="col">Valor</th>
+          </tr>
+        </thead>
+        <tbody>
+          {
+            caso.metricas.map((metrica) => (
+              <tr>
+                <th scope="row">{metrica}</th>
+                <td><span class="marcador">[Pendiente]</span></td>
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </div>
+    <p>{caso.sinTestimonios}</p>
+    <h2>Si el proceso le sirve de referencia</h2>
+    <p>{caso.cierre}</p>
+    <div class="acciones">
+      <EnlaceWhatsapp mensaje={mensajesWhatsapp.caso} />
+      <a class="boton boton--secundario" href="/contacto">Ir a contacto</a>
+    </div>
+  </article>
+</Base>
