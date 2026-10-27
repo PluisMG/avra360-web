@@ -1,5 +1,6 @@
 ---
 import { agencia, enlaceWhatsapp, navegacionPie, telefono } from '../config/agencia';
+import { pie } from '../config/textos';
 import FormularioBoletin from './FormularioBoletin.astro';
 
 interface Props {
@@ -7,7 +8,6 @@ interface Props {
 }
 
 const { mensaje } = Astro.props;
-const anio = 2026;
 ---
 
 <footer class="pie">
@@ -38,9 +38,7 @@ const anio = 2026;
     <FormularioBoletin identificador="suscripcion-pie" />
   </div>
   <div class="contenedor legal">
-    <p>MKT Creativa no atiende pacientes ni recibe datos clínicos.</p>
-    <p>
-      Textos provisionales al 27 de octubre de 2026. {agencia.nombre} © {anio}.
-    </p>
+    <p>{pie.linea}</p>
+    <p>{pie.derechos}</p>
   </div>
 </footer>

@@ -9,6 +9,7 @@ import {
   PUBLIC_MOSTRAR_EDICION_EJEMPLO,
 } from 'astro:env/server';
 import { clasificarAccionFormulario } from './csp';
+import { avisoPublico } from './publicacion';
 
 function limpio(valor: string | undefined) {
   const texto = valor?.trim() ?? '';
@@ -68,7 +69,14 @@ export type FormularioBoletin =
  */
 export function formularioBoletin(): FormularioBoletin {
   const accion = clasificarAccionFormulario(PUBLIC_MAILERLITE_FORM_ACTION);
-  if (!accion.lista) return { listo: false, motivo: accion.motivo };
+  if (!accion.lista) {
+    if (accion.motivo === 'parece-secreto' || accion.motivo === 'url-invalida') {
+      return { listo: false, motivo: accion.motivo };
+    }
+    return { listo: false, motivo: 'sin-configuracion' };
+  }
+  // El formulario pide aviso de privacidad. Sin datos ni revisión legal no se publica.
+  if (!avisoPublico) return { listo: false, motivo: 'sin-configuracion' };
 
   const consentimiento = limpio(PUBLIC_MAILERLITE_CONSENT_FIELD);
 

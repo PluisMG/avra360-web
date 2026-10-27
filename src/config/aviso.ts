@@ -57,7 +57,7 @@ export const bloquesAviso: BloqueAviso[] = [
     titulo: 'Finalidades',
     parrafos: [
       'Finalidades que se desprenden de la solicitud que la persona inicia: responder un mensaje de WhatsApp o una llamada sobre los servicios de la agencia. En la medida en que exista una relación jurídica pedida por la persona titular, el artículo 9 de la ley prevé supuestos en los que no se requiere un consentimiento adicional. La revisión legal debe confirmar cómo aplica eso a cada canal.',
-      'Finalidades que sí requieren consentimiento de la persona titular: enviar el boletín los días 1 y 15 al correo que ella anote, y —solo si se configuran las herramientas y ella acepta— medir la audiencia del sitio con Google Analytics 4 y con el píxel de Meta.',
+      'Finalidades que sí requieren consentimiento de la persona titular: enviar el boletín, una vez al mes, al correo que ella anote, y —solo si se configuran las herramientas y ella acepta— medir la audiencia del sitio con Google Analytics 4 y con el píxel de Meta.',
       'No usamos los datos para vender bases, para perfilar estado de salud ni para publicidad de tratamientos. No hay finalidades secundarias de mercadeo de terceros.',
     ],
   },

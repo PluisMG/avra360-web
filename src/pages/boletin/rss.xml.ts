@@ -9,7 +9,7 @@ export const GET: APIRoute = async (context) => {
   const ediciones = ordenarEdiciones(await getCollection('boletin', incluirEdicion));
   return rss({
     title: `Boletín ${agencia.nombre}`,
-    description: `Notas para clínicas y profesionales de la salud en ${agencia.ciudad}, ${agencia.estado}. Sale los días 1 y 15.`,
+    description: `Notas para clínicas y profesionales de la salud en ${agencia.ciudad}, ${agencia.estado}. Se publica una vez al mes.`,
     site: context.site ?? 'https://mktcreativa.example',
     trailingSlash: false,
     customData: '<language>es-mx</language>',

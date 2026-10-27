@@ -1,8 +1,7 @@
 ---
 import EnlaceWhatsapp from '../components/EnlaceWhatsapp.astro';
 import Migas from '../components/Migas.astro';
-import Texto from '../components/Texto.astro';
-import { agencia, pendientes, telefono, mensajesWhatsapp } from '../config/agencia';
+import { agencia, telefono, mensajesWhatsapp } from '../config/agencia';
 import Base from '../layouts/Base.astro';
 import { contacto, seo } from '../config/textos';
 ---
@@ -39,12 +38,8 @@ import { contacto, seo } from '../config/textos';
         <dd>{agencia.ciudad}, {agencia.estado}, {agencia.pais}</dd>
       </div>
       <div>
-        <dt>Domicilio</dt>
-        <dd><Texto texto={pendientes.domicilio} /></dd>
-      </div>
-      <div>
-        <dt>Horario</dt>
-        <dd><Texto texto={pendientes.horario} /></dd>
+        <dt>Atendemos</dt>
+        <dd>{contacto.atendemos}</dd>
       </div>
     </dl>
   </div>

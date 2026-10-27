@@ -1,4 +1,5 @@
 import { agencia, telefono } from './agencia';
+import { jsonLdDescripcion } from './textos';
 
 export function urlCanonica(sitio: URL, pathname: string) {
   const ruta = pathname === '/' ? '/' : pathname.replace(/\/$/, '');
@@ -12,8 +13,7 @@ export function jsonLdProfesional(origen: string) {
     '@context': 'https://schema.org',
     '@type': 'ProfessionalService',
     name: agencia.nombre,
-    description:
-      'Agencia de marketing y publicidad para clínicas y profesionales de la salud en Tuxtla Gutiérrez, Chiapas. Trabaja estrategia, sitio web y SEO local, con énfasis en salud mental y publicidad que pueda sostenerse ante la regulación sanitaria. No promete resultados.',
+    description: jsonLdDescripcion,
     url: `${base}/`,
     image: `${base}/og.png`,
     logo: `${base}/favicon.svg`,

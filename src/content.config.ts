@@ -1,6 +1,7 @@
 import { defineCollection } from 'astro:content';
 import { z } from 'astro/zod';
 import { glob } from 'astro/loaders';
+import { validarFechaEdicion } from './config/fechas';
 
 const fechaDeEdicion = z.preprocess((valor) => {
   if (valor instanceof Date && !Number.isNaN(valor.getTime())) {
@@ -10,27 +11,10 @@ const fechaDeEdicion = z.preprocess((valor) => {
     return `${anio}-${mes}-${dia}`;
   }
   return valor;
-}, z
-  .string()
-  .regex(/^\d{4}-\d{2}-\d{2}$/, 'La fecha se escribe AAAA-MM-DD.'))
-  .superRefine((valor, contexto) => {
-    const [anio, mes, dia] = valor.split('-').map(Number);
-    const fecha = new Date(Date.UTC(anio, mes - 1, dia));
-    const real =
-      fecha.getUTCFullYear() === anio &&
-      fecha.getUTCMonth() === mes - 1 &&
-      fecha.getUTCDate() === dia;
-    if (!real) {
-      contexto.addIssue({ code: 'custom', message: 'La fecha no existe en el calendario.' });
-      return;
-    }
-    if (dia !== 1 && dia !== 15) {
-      contexto.addIssue({
-        code: 'custom',
-        message: 'El boletín sale el día 1 o el día 15. Use una de esas fechas.',
-      });
-    }
-  });
+}, z.string().superRefine((valor, contexto) => {
+  const error = validarFechaEdicion(valor);
+  if (error) contexto.addIssue({ code: 'custom', message: error });
+}));
 
 const boletin = defineCollection({
   loader: glob({ base: './src/content/boletin', pattern: '**/*.md' }),

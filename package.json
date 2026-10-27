@@ -11,8 +11,8 @@
     "build": "astro build",
     "preview": "astro preview --host 127.0.0.1",
     "check": "astro check",
-    "test": "node --experimental-strip-types --test src/config/csp.test.ts",
-    "verificar": "node scripts/verificar-enlaces.mjs"
+    "test": "node --experimental-strip-types --test src/config/*.test.ts",
+    "verificar": "node --experimental-strip-types scripts/verificar-enlaces.mjs"
   },
   "dependencies": {
     "@astrojs/rss": "4.0.19",

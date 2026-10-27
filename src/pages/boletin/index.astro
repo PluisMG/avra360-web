@@ -2,7 +2,7 @@
 import { getCollection } from 'astro:content';
 import FormularioBoletin from '../../components/FormularioBoletin.astro';
 import Migas from '../../components/Migas.astro';
-import { mensajesWhatsapp } from '../../config/agencia';
+import { enlaceWhatsapp, mensajesWhatsapp } from '../../config/agencia';
 import { incluirEdicion, ordenarEdiciones } from '../../config/boletin';
 import { formatearFecha } from '../../config/fechas';
 import Base from '../../layouts/Base.astro';
@@ -51,5 +51,9 @@ const ediciones = ordenarEdiciones(await getCollection('boletin', incluirEdicion
     }
 
     <FormularioBoletin identificador="suscripcion" />
+    <p>
+      ¿Tiene una duda sobre la publicidad de su consultorio?
+      <a href={enlaceWhatsapp(mensajesWhatsapp.boletin)}>Escríbanos por WhatsApp</a>.
+    </p>
   </div>
 </Base>

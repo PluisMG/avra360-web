@@ -2,7 +2,7 @@
 
 Sitio estático de MKT Creativa, agencia de marketing y publicidad de Pedro Luis Maldonado Gordillo en Tuxtla Gutiérrez, Chiapas. El contenido está en español de México.
 
-Los textos de marketing son **provisionales**. El posicionamiento definitivo sale del plan estratégico y el equipo creativo los va a pulir. El aviso de privacidad es un **borrador para revisión legal**.
+Los textos de marketing son los de Creativo, del 26 de octubre de 2026. El aviso de privacidad sigue como borrador en el repositorio y **no entra al build** hasta tener los datos de Pedro y la revisión legal.
 
 ## Requisitos
 
@@ -22,7 +22,7 @@ npm run verificar
 
 `npm run build` genera la carpeta `dist/`, lista para un hospedaje estático. No despliega nada y no toca DNS.
 
-`npm run verificar` revisa, sobre `dist/`, que cada página tenga un solo `h1`, título, descripción, Open Graph y JSON-LD, y que los enlaces internos, anclas, teléfono y WhatsApp coincidan con lo construido.
+`npm run verificar` revisa, sobre `dist/`, que cada página tenga un solo `h1`, título, descripción, Open Graph y JSON-LD, y que los enlaces internos, anclas, teléfono y WhatsApp coincidan con lo construido. También falla si el HTML público contiene un marcador (`[Pendiente`, `[RAZÓN`, `[DOMICILIO`, `[CORREO`), `POR CONFIRMAR`, `{{` o `PROVISIONAL`. El propio `npm run build` se detiene con la misma revisión.
 
 ## Dónde se edita el contenido
 
@@ -30,7 +30,7 @@ npm run verificar
 | --- | --- |
 | Nombre, teléfono, WhatsApp, ciudad, navegación | `src/config/agencia.ts` |
 | Textos de las páginas y mensajes de cada pantalla | `src/config/textos.ts` |
-| Borrador del aviso de privacidad | `src/config/aviso.ts` |
+| Borrador del aviso de privacidad (fuera del build) | `src/config/aviso.ts` y `src/borradores/aviso-de-privacidad.astro` |
 | Ediciones del boletín | `src/content/boletin/*.md` |
 | Precios (apagados) | `mostrarPrecios` y `precios` en `src/config/agencia.ts` |
 
@@ -68,17 +68,17 @@ Sirve para un enlace de revisión. No use ese build como sitio indexable.
 
 ## Boletín
 
-Cada edición es un Markdown en `src/content/boletin/`. El esquema está en `src/content.config.ts` y el build falla si no se cumple. El boletín sale el día **1** y el día **15**: la fecha del archivo tiene que ser uno de esos días.
+Cada edición es un Markdown en `src/content/boletin/`. El esquema está en `src/content.config.ts` y el build falla si no se cumple. El boletín se publica **una vez al mes**. La fecha puede ser cualquier día civil válido, en formato `AAAA-MM-DD`.
 
 ### Cómo agregar una edición
 
-1. Cree `src/content/boletin/AAAA-MM-DD.md`. Use el día 1 o el 15. No use el prefijo `ejemplo-`: está reservado para la edición de muestra.
+1. Cree `src/content/boletin/AAAA-MM-DD.md`. Use cualquier día del mes. No use el prefijo `ejemplo-`: está reservado para la edición de muestra.
 2. Copie este frontmatter y sustituya los textos:
 
 ```yaml
 ---
 titulo: "Título de la edición, con al menos doce caracteres"
-fecha: "2026-11-01"
+fecha: "2026-11-03"
 tema: "Tema principal de la edición"
 descripcion: "Resumen de 50 a 160 caracteres para la ficha, el RSS y la meta descripción."
 ejemplo: false
@@ -96,7 +96,7 @@ llamado:
 
 3. Debajo del frontmatter puede ir el cuerpo en Markdown. No use un `h1`: la página ya lo pone con el título. Empiece en `h2` si necesita subtítulos.
 4. `enlace` del llamado es una ruta del sitio (`/contacto`) o una URL `https`.
-5. Ejecute `npm run build`. Si falta una nota, la fecha no es 1 o 15, o la descripción se pasa de largo, el build se detiene y dice por qué.
+5. Ejecute `npm run build`. Si falta una nota, la fecha no existe o la descripción se pasa de largo, el build se detiene y dice por qué.
 
 La portada del boletín lista las ediciones por fecha, de la más nueva a la más antigua. Cada una vive en `/boletin/[slug]`. El RSS está en `/boletin/rss.xml`.
 
@@ -120,8 +120,9 @@ El formulario del boletín (en `/boletin` y en el pie) está listo, pero la cuen
 - Sin una URL https válida, el formulario se muestra desactivado, con un mensaje claro, y el botón no envía nada.
 - Con URL válida, el build añade su origen (el host real, por ejemplo `https://assets.mailerlite.com`) a `form-action` de la CSP. Sin URL, `form-action` queda en `'self'`. El envío es un POST del formulario, así que no hace falta abrir `connect-src`.
 - Si la URL trae un parámetro `api_key`, `token`, `secret` o `password`, el formulario también se queda desactivado.
+- Aunque la URL sea válida, el formulario sigue desactivado mientras `avisoPublico` sea `false` en `src/config/publicacion.ts`. Hoy lo es: falta el aviso de privacidad. El estado desactivado no enlaza a esa página.
 
-La casilla de consentimiento y el enlace al aviso de privacidad están en los dos estados.
+Cuando el aviso pueda publicarse, el formulario activo usa la casilla de consentimiento y el enlace «Leer el aviso de privacidad».
 
 ## Precios
 
@@ -135,15 +136,9 @@ En `src/config/agencia.ts`, `mostrarPrecios` está en `false`. `/servicios` mues
 
 ## Aviso de privacidad
 
-`/aviso-de-privacidad` es un borrador alineado a la LFPDPPP publicada en el DOF el 20 de marzo de 2025 (texto con la reforma del 14 de noviembre de 2025). Cubre datos de contacto y suscriptores del boletín. Está marcado como borrador y enlazado en el pie y en el formulario.
+El borrador sigue en el repositorio (`src/config/aviso.ts` y `src/borradores/aviso-de-privacidad.astro`), alineado a la LFPDPPP publicada en el DOF el 20 de marzo de 2025 (texto con la reforma del 14 de noviembre de 2025). **No se genera** `/aviso-de-privacidad`, no entra al sitemap y ninguna página pública lo enlaza.
 
-Hay que sustituir, como mínimo:
-
-- `[RAZÓN SOCIAL]`
-- `[DOMICILIO]`
-- `[CORREO DE PRIVACIDAD]`
-
-También están pendientes `[HORARIO]` y `[PROVEEDOR DE HOSPEDAJE]`. No publique el dominio como sitio definitivo hasta la revisión legal.
+Para volver a publicarlo hacen falta la razón social, el domicilio, el correo de privacidad, el horario, el proveedor de hospedaje y la revisión legal. Hasta entonces el formulario del boletín permanece desactivado. No deje marcadores en el HTML.
 
 ## SEO
 
@@ -153,15 +148,19 @@ El sitemap se genera en el build. La edición de ejemplo no se incluye.
 
 ## Datos pendientes
 
-- Razón social, domicilio legal y correo de privacidad
+Estos datos no aparecen en el sitio. No hay marcadores en su lugar:
+
+- Razón social, domicilio legal y correos (privacidad y agencia)
 - Horario de atención
+- Si el diagnóstico de entrada es sin costo o de pago
+- Métricas del caso, cuando exista una medición con fecha. Los indicadores previstos son: visitas orgánicas al sitio nuevo, conversaciones de WhatsApp iniciadas desde el sitio, presencia en búsquedas locales de Tuxtla Gutiérrez y tiempo de carga medido del sitio nuevo
+- Hallazgos del diagnóstico de MentalCareClinic, fecha y dirección del sitio nuevo, y estado de su ficha de Google, si Pedro autoriza publicarlos
+- Condiciones del piloto y testimonio de la dirección, solo con autorización
 - Dominio real (`SITE`)
 - URL pública del formulario de MailerLite y nombres de campo, si cambian
 - Identificadores de GA4 y del píxel de Meta, si se van a usar
 - Precios aprobados
-- Textos definitivos del plan estratégico
 - Revisión legal del aviso antes de tratarlo como vigente
 - Proveedor de hospedaje, para nombrarlo en el aviso
-- Métricas reales y, si se quieren publicar, hallazgos del diagnóstico de MentalCareClinic
 - URL oficial del sitio de la clínica, si se va a enlazar
 - Retirar la edición de ejemplo cuando existan ediciones reales

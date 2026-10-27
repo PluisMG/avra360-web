@@ -6,6 +6,7 @@ import sitemap from '@astrojs/sitemap';
 import type { AstroIntegration } from 'astro';
 import { defineConfig, envField } from 'astro/config';
 import { politicaCsp } from './src/config/csp';
+import { revisarDirectorioPublico } from './src/config/publicacion';
 
 const sitio = resolverSitio(process.env.SITE ?? 'https://mktcreativa.example');
 
@@ -95,6 +96,11 @@ function encabezadosCloudflare(): AstroIntegration {
         ].join('\n');
 
         await writeFile(path.join(raiz, '_headers'), cuerpo, 'utf8');
+
+        const hallazgos = await revisarDirectorioPublico(raiz);
+        if (hallazgos.length > 0) {
+          throw new Error(`El build público incluye texto que no debe publicarse:\n${hallazgos.join('\n')}`);
+        }
       },
     },
   };
@@ -115,6 +121,7 @@ export default defineConfig({
         if (url.pathname.endsWith('.xml') || url.pathname.endsWith('.txt')) return false;
         if (url.pathname.includes('/404')) return false;
         if (url.pathname.includes('/boletin/ejemplo-')) return false;
+        if (url.pathname.includes('/aviso-de-privacidad')) return false;
         return true;
       },
     }),

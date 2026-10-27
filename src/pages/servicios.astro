@@ -42,11 +42,8 @@ import { seo, servicios } from '../config/textos';
 
   <section class="seccion" aria-labelledby="servicios-cierre">
     <div class="contenedor">
-      <h2 id="servicios-cierre">Conversar sobre un servicio de salud en Chiapas</h2>
-      <p>
-        Cuéntenos la especialidad, la ciudad y si ya tiene sitio. La respuesta no incluye una promesa de pacientes ni un
-        precio que todavía no está aprobado.
-      </p>
+      <h2 id="servicios-cierre">{servicios.cierreTitulo}</h2>
+      <p>{servicios.cierreTexto}</p>
       <EnlaceWhatsapp mensaje={mensajesWhatsapp.servicios} />
     </div>
   </section>

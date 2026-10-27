@@ -1,5 +1,7 @@
 ---
-import { mostrarPrecios, precios } from '../config/agencia';
+import EnlaceWhatsapp from './EnlaceWhatsapp.astro';
+import { mensajesWhatsapp, mostrarPrecios, precios } from '../config/agencia';
+import { servicios } from '../config/textos';
 ---
 
 <section id="inversion" class:list={['seccion', { 'bloque-apagado': !mostrarPrecios }]} aria-labelledby="inversion-titulo" data-estado={mostrarPrecios ? 'activo' : 'desactivado'}>
@@ -34,11 +36,9 @@ import { mostrarPrecios, precios } from '../config/agencia';
         )
       ) : (
         <>
-          <p class="estado-apagado">Bloque desactivado</p>
-          <p>
-            Los precios no se publican hasta que Pedro los apruebe. Este espacio queda reservado y no muestra montos,
-            estimados ni paquetes de ejemplo.
-          </p>
+          <p class="estado-apagado">{servicios.inversionEstado}</p>
+          <p>{servicios.inversionTexto}</p>
+          <EnlaceWhatsapp mensaje={mensajesWhatsapp.servicios} etiqueta={servicios.inversionEnlace} />
         </>
       )
     }

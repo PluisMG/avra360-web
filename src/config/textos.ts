@@ -1,35 +1,34 @@
 /**
- * TEXTOS PROVISIONALES.
- * El posicionamiento definitivo sale del plan estratégico de la agencia
- * y el equipo creativo va a pulir esta redacción. Se pueden reemplazar
- * estos objetos sin tocar el diseño.
+ * Textos finales de Creativo (26 de octubre de 2026).
+ * Lo que todavía depende de Pedro —diagnóstico de entrada, métricas,
+ * razón social, domicilio y correos— no se publica aquí.
  */
 
 export const seo = {
   inicio: {
-    titulo: 'Marketing para clínicas en Tuxtla Gutiérrez, Chiapas',
+    titulo: 'Marketing para clínicas en Chiapas, con criterio COFEPRIS',
     descripcion:
-      'Agencia de marketing para clínicas y profesionales de la salud en Tuxtla Gutiérrez, Chiapas. Estrategia, sitio web y SEO local, con énfasis en salud mental.',
+      'Agencia de marketing para clínicas y profesionales de la salud en Chiapas. Estrategia, sitio web y SEO local que respetan la norma de COFEPRIS.',
   },
   servicios: {
-    titulo: 'Estrategia, sitio web y SEO local para clínicas en Chiapas',
+    titulo: 'Servicios de marketing para clínicas en Chiapas',
     descripcion:
-      'Servicios de estrategia, sitio web, SEO local y campañas para clínicas en Chiapas, cuidados para la publicidad de servicios de salud. Sin precios publicados.',
+      'Estrategia, sitio web, SEO local y campañas para clínicas y profesionales de la salud en Chiapas, con revisión de criterio COFEPRIS.',
   },
   caso: {
-    titulo: 'Caso MentalCareClinic: proceso de sitio y SEO local en Chiapas',
+    titulo: 'Caso MentalCareClinic: marketing de salud mental en Chiapas',
     descripcion:
-      'Proceso de trabajo con MentalCareClinic en Chiapas: diagnóstico del sitio en Google Sites, estrategia, sitio accesible y SEO local. Sin cifras ni testimonios.',
+      'Cómo trabajamos con MentalCareClinic: diagnóstico, estrategia, sitio nuevo y SEO local. Declaramos que el fundador de la agencia es socio de la clínica.',
   },
   boletin: {
-    titulo: 'Boletín para clínicas y salud mental en Chiapas',
+    titulo: 'Boletín de marketing para clínicas en Chiapas',
     descripcion:
-      'Archivo del boletín de MKT Creativa para clínicas y profesionales de la salud en Chiapas. Sale los días 1 y 15. Suscripción preparada, todavía sin conectar.',
+      'Notas breves para clínicas y profesionales de la salud en Chiapas: Google, redes y publicidad dentro de la norma de COFEPRIS.',
   },
   contacto: {
-    titulo: 'Contacto de la agencia en Tuxtla Gutiérrez, Chiapas',
+    titulo: 'Contacto: agencia de marketing de salud en Tuxtla',
     descripcion:
-      'Contacto de MKT Creativa en Tuxtla Gutiérrez, Chiapas: WhatsApp +52 961 191 9199 y llamada. Dirección y horario todavía pendientes.',
+      'Escríbanos por WhatsApp al +52 961 191 9199 para hablar del marketing de su clínica o consultorio en Chiapas. MKT Creativa, Tuxtla Gutiérrez.',
   },
   aviso: {
     titulo: 'Aviso de privacidad',
@@ -44,105 +43,109 @@ export const seo = {
 } as const;
 
 export const inicio = {
-  ceja: 'Agencia de marketing y publicidad · Tuxtla Gutiérrez',
-  h1: 'Marketing para clínicas y profesionales de la salud en Chiapas',
-  lede: 'MKT Creativa es la agencia de Pedro Luis Maldonado Gordillo. Acompaña a clínicas y consultorios —con énfasis en salud mental— a ordenar tres cosas juntas: lo que se puede decir, el sitio donde se dice y la forma en que las personas lo encuentran cerca.',
+  ceja: 'Agencia de marketing y publicidad para la salud · Tuxtla Gutiérrez, Chiapas',
+  h1: 'Marketing para la salud en Chiapas, dentro de la norma de COFEPRIS',
+  lede: 'MKT Creativa acompaña a clínicas, consultorios y profesionales de la salud de Chiapas a darse a conocer con una comunicación clara, ética y apegada a la regulación sanitaria. Estrategia, sitio web y presencia en Google, trabajados por un solo equipo y con el mismo criterio.',
   apoyo:
-    'La publicidad de servicios de salud se trabaja para que pueda sostenerse ante la regulación, COFEPRIS incluida. No prometemos pacientes, citas ni resultados clínicos.',
+    'Revisamos cada texto, pieza y anuncio antes de publicarlo: cédula profesional a la vista, nada de promesas de curación ni de resultados, y el aviso o permiso de publicidad identificado antes de difundir.',
   fichaTitulo: 'En una mirada',
   ficha: [
-    { termino: 'Para quién', detalle: 'Clínicas y profesionales de la salud' },
-    { termino: 'Énfasis', detalle: 'Salud mental' },
-    { termino: 'Dónde', detalle: 'Tuxtla Gutiérrez, Chiapas' },
+    { termino: 'Para quién', detalle: 'Clínicas, consultorios y profesionales de la salud' },
+    { termino: 'Especialidad de la agencia', detalle: 'Salud mental y servicios de salud en general' },
+    { termino: 'Dónde', detalle: 'Tuxtla Gutiérrez y el resto de Chiapas' },
     { termino: 'Contacto principal', detalle: 'WhatsApp +52 961 191 9199' },
   ],
   aclaracion:
-    'Este sitio es de la agencia, no de una clínica. MKT Creativa no atiende pacientes ni recibe datos clínicos.',
+    'Este es el sitio de una agencia de marketing. MKT Creativa no presta servicios de salud, no atiende pacientes ni recibe datos clínicos.',
   paraQuienTitulo: 'Para quién es este trabajo',
   paraQuien: [
     {
-      titulo: 'Clínicas y consultorios',
+      titulo: 'Clínicas y consultorios con equipo',
       texto:
-        'Equipos que ya atienden en Chiapas y necesitan que su presencia pública sea clara: qué servicio ofrecen, en qué ciudad, y cómo se pide una conversación. Sin adornos que la norma no deja sostener.',
+        'Si dirige una clínica o un consultorio con varias personas, necesita que su marca, su sitio, su ficha de Google y sus anuncios digan lo mismo y puedan sostenerse ante la autoridad sanitaria. Ordenamos esas piezas en un solo encargo, con un solo equipo.',
     },
     {
-      titulo: 'Salud mental, como énfasis',
+      titulo: 'Profesionales que atienden por su cuenta',
       texto:
-        'La agencia pone el acento en salud mental. El mismo criterio —regulación, lenguaje cuidadoso y nada de promesas— sirve para otras especialidades de la salud que se anuncian en la región.',
+        'Si usted ejerce de forma individual, le ayudamos a tener una presencia propia, además de los directorios en los que ya aparece: una ficha de Google bien cuidada, un sitio sencillo con su cédula a la vista y un canal claro para que lo contacten.',
+    },
+    {
+      titulo: 'Salud mental, nuestro énfasis',
+      texto:
+        'Psiquiatría, psicología y centros de atención en salud mental requieren un lenguaje especialmente cuidadoso, tanto por la norma sanitaria como por las políticas de Meta y Google. Ese es el terreno en el que más trabajamos, y el mismo criterio se aplica a cualquier especialidad.',
     },
   ],
-  criteriosTitulo: 'Tres criterios de trabajo',
+  criteriosTitulo: 'Cómo trabajamos',
   criterios: [
     {
       numero: '01',
-      titulo: 'COFEPRIS, explicado y aplicado',
+      titulo: 'Cumplimiento antes de publicar',
       texto:
-        'La publicidad de servicios de salud no se redacta como la de cualquier otro oficio. Revisamos lo que el sitio y las campañas pueden decir, y señalamos cuándo hace falta un permiso o una opinión jurídica. La agencia no sustituye a la autoridad ni a un abogado.',
+        'La publicidad de servicios de salud en México se rige por la Ley General de Salud y su Reglamento en Materia de Publicidad, y la agencia que la elabora también responde por ella. Antes de producir o pautar, identificamos si su caso requiere aviso o permiso de COFEPRIS y le pedimos copia del acuse del aviso o del permiso. No sustituimos a la autoridad ni a un abogado; le ayudamos a llegar preparado.',
     },
     {
       numero: '02',
-      titulo: 'Sin promesas de resultados',
+      titulo: 'Información, no promesas',
       texto:
-        'No publicamos curas garantizadas, porcentajes de mejoría, testimonios de pacientes ni antes y después como si fueran prueba. Si una frase no se puede sostener, no entra al sitio ni a un anuncio.',
+        'Comunicamos qué servicio ofrece, quién lo presta, con qué formación y cómo se solicita. No publicamos promesas de curación, porcentajes de mejoría, testimonios de pacientes ni imágenes de antes y después. Si una afirmación no se puede sustentar, no se publica.',
     },
     {
       numero: '03',
-      titulo: 'Estrategia, sitio y SEO local juntos',
+      titulo: 'Estrategia, sitio y Google, juntos',
       texto:
-        'El sitio no se diseña aparte del mensaje, ni el SEO local aparte del sitio. Nombre, ciudad, servicio y forma de contacto tienen que coincidir en la página, en la ficha del establecimiento y en lo que se dice en una campaña.',
+        'El mensaje, el sitio web y la ficha de Google se trabajan como una sola pieza. Nombre, especialidad, ciudad y datos de contacto coinciden en todos los canales, para que las personas lo encuentren y entiendan lo que ofrece.',
     },
   ],
-  serviciosTitulo: 'Servicios, en corto',
-  serviciosIntro:
-    'El detalle está en la página de servicios. Aquí está el mapa, para no separar lo que se trabaja en el mismo encargo.',
+  serviciosTitulo: 'Servicios',
+  serviciosIntro: 'Cuatro líneas de trabajo que se contratan juntas o por separado. El detalle está en la página de servicios.',
   servicios: [
     {
       href: '/servicios#estrategia',
       titulo: 'Estrategia',
-      texto: 'Qué se puede decir, a quién y en qué canales.',
+      texto: 'Qué decir, a quién y en qué canales, dentro de la norma.',
     },
     {
       href: '/servicios#sitio-web',
       titulo: 'Sitio web',
-      texto: 'Una página rápida, clara y accesible.',
+      texto: 'Rápido, claro, accesible y con su cédula a la vista.',
     },
     {
       href: '/servicios#seo-local',
-      titulo: 'SEO local',
-      texto: 'Encontrar el servicio en Tuxtla y en Chiapas.',
+      titulo: 'SEO local y Google',
+      texto: 'Que lo encuentren en su ciudad, con datos consistentes.',
     },
     {
       href: '/servicios#contenido-cofepris',
       titulo: 'Contenido y campañas',
-      texto: 'Piezas que quepan en la regulación sanitaria.',
+      texto: 'Piezas revisadas con criterio COFEPRIS antes de publicarse.',
     },
   ],
-  casoTitulo: 'Un proceso, no un testimonio',
+  casoTitulo: 'Un caso contado con transparencia',
   casoTexto:
-    'MentalCareClinic es el caso que podemos contar hoy. Se relata como proceso: diagnóstico del sitio anterior en Google Sites, estrategia, sitio nuevo pensado para ser rápido y accesible, y SEO local. No hay cifras ni opiniones de pacientes.',
+    'Con MentalCareClinic, una clínica de salud mental en Chiapas, documentamos el proceso completo: diagnóstico de su presencia digital, estrategia de comunicación, sitio nuevo y SEO local. Publicaremos resultados solo cuando estén medidos y con fecha.',
   casoRelacion:
-    'Pedro Luis Maldonado Gordillo es socio de la clínica. Por eso este relato no se presenta como prueba de un cliente ajeno.',
-  casoEnlace: 'Leer el proceso',
-  boletinTitulo: 'Boletín los días 1 y 15',
+    'Declaración de interés: Pedro Luis Maldonado Gordillo, fundador de MKT Creativa, es socio de MentalCareClinic.',
+  casoEnlace: 'Conocer el proceso',
+  boletinTitulo: 'Boletín para clínicas y consultorios',
   boletinTexto:
-    'Un tema, dos o tres notas breves y un solo llamado a la acción. El archivo ya está listo. La lista de correo se conectará a MailerLite cuando exista la cuenta; mientras tanto el formulario permanece desactivado y no envía nada.',
-  boletinEnlace: 'Ir al boletín',
-  cierreTitulo: 'Si dirige una clínica en Chiapas, el primer paso es una conversación',
+    'Notas breves y prácticas sobre marketing de salud en Chiapas: qué se puede decir en público, cómo cuidar su ficha de Google y qué cambia en la regulación. Un tema por edición, una vez al mes.',
+  boletinEnlace: 'Conocer el boletín',
+  cierreTitulo: 'El primer paso es una conversación',
   cierreTexto:
-    'Cuéntenos qué servicio ofrece y en qué ciudad. De ahí vemos si el encargo cabe en este modo de trabajar. No hace falta un brief perfecto.',
+    'Cuéntenos qué servicio ofrece, en qué ciudad atiende y cómo lo encuentran hoy sus pacientes. Con eso le proponemos un diagnóstico digital y de cumplimiento, y le decimos con claridad qué podemos hacer por su clínica.',
 } as const;
 
 export const servicios = {
-  h1: 'Servicios de marketing para clínicas en Chiapas',
-  lede: 'Cuatro piezas que se contratan como un solo encargo: estrategia, sitio web, SEO local, y contenido o campañas que puedan publicarse en servicios de salud. El énfasis de la agencia está en la salud mental.',
+  h1: 'Servicios de marketing para clínicas y profesionales de la salud',
+  lede: 'Cuatro líneas de trabajo que se diseñan juntas para que su comunicación sea clara, coherente y apegada a la regulación sanitaria. Puede contratarlas como un solo encargo o empezar por la que más necesite. Nuestro énfasis está en la salud mental.',
   bloques: [
     {
       id: 'estrategia',
       numero: '01',
       titulo: 'Estrategia',
       parrafos: [
-        'Antes de escribir un anuncio o rehacer un sitio, se acuerda qué servicio se ofrece, en qué ciudad, a quién le habla y qué frases no se van a usar. Esa decisión es el encargo, no un documento que después se archiva.',
-        'En salud, la estrategia también marca el límite: qué corresponde a información del consultorio y qué sería una promesa clínica. Si algo necesita permiso de publicidad o una revisión de abogado, se dice en esa conversación, no después de haberlo publicado.',
+        'Antes de rehacer un sitio o lanzar un anuncio, definimos con usted qué servicios va a comunicar, en qué ciudades, a qué público y con qué mensajes. También acordamos qué frases quedan fuera, porque en salud lo que no se dice importa tanto como lo que se dice.',
+        'La estrategia identifica desde el inicio qué piezas requieren aviso o permiso de publicidad ante COFEPRIS y qué documentos los respaldan. Si un caso necesita la opinión de un abogado sanitario, se lo decimos antes de producir, no después de publicar.',
       ],
     },
     {
@@ -150,114 +153,143 @@ export const servicios = {
       numero: '02',
       titulo: 'Sitio web',
       parrafos: [
-        'El sitio se construye para cargar rápido, leerse en el teléfono y poder usarse con teclado y lector de pantalla. Una página lenta o confusa no se arregla con más anuncios.',
-        'La estructura mínima que pedimos: qué servicio es, quién lo ofrece, en qué ciudad, cómo se contacta y qué no se promete. Sin carruseles de testimonios ni contadores de pacientes.',
+        'Construimos sitios que cargan rápido, se leen bien en el teléfono y pueden usarse con teclado y lector de pantalla. Cada página dice qué servicio ofrece, quién lo presta, dónde y cómo se solicita.',
+        'Incluimos lo que la norma pide y lo que da confianza: nombre de la institución que expidió el título y número de cédula profesional de quien ofrece el servicio, aviso de privacidad y un botón directo a WhatsApp. No usamos contadores de pacientes, testimonios como prueba ni imágenes de antes y después.',
       ],
     },
     {
       id: 'seo-local',
       numero: '03',
-      titulo: 'SEO local',
+      titulo: 'SEO local y Google',
       parrafos: [
-        'El SEO local, en este encargo, es hacer encontrable un servicio real en Tuxtla Gutiérrez y en Chiapas: páginas con el servicio y la ciudad escritos con claridad, datos de contacto consistentes y una ficha de establecimiento alineada con el sitio.',
-        'No ofrecemos el primer lugar en Google ni compramos reseñas. Si más adelante hay mediciones, se publican como cifras observadas, con su fecha, y no como una promesa de la campaña.',
+        'Trabajamos para que su servicio pueda encontrarse en su ciudad: páginas con la especialidad y la ubicación escritas con claridad, una ficha de Google completa y verificada, y datos de contacto idénticos en el sitio, en Google y en los directorios donde ya aparece.',
+        'No ofrecemos “el primer lugar en Google” ni compramos reseñas. Le ayudamos a pedir opiniones de forma legítima y a responderlas sin revelar datos de salud. Cuando medimos avances, los reportamos como datos observados, con su fecha.',
       ],
     },
     {
       id: 'contenido-cofepris',
       numero: '04',
-      titulo: 'Contenido y campañas conformes a COFEPRIS',
+      titulo: 'Contenido y campañas con criterio COFEPRIS',
       parrafos: [
-        'Textos del sitio, fichas, piezas para redes y anuncios salen del mismo criterio. Lo que no puede decirse en el consultorio tampoco se dice en una pauta.',
-        'El detalle del criterio regulatorio está más abajo. Forma parte del servicio, no de un anexo opcional.',
+        'Textos del sitio, publicaciones en redes, artículos, boletines y anuncios salen del mismo criterio. Cada pieza informa sobre el tipo, las características y la forma de acceder al servicio, sin atribuirle efectos que no se puedan comprobar.',
+        'En campañas pagadas también cuidamos las políticas de Meta y Google para temas de salud, como no aludir a la condición de salud de quien lee el anuncio. Antes de pautar, confirmamos que el aviso o el permiso de publicidad que corresponda esté presentado.',
       ],
     },
   ],
   cofepris: {
     id: 'cofepris',
-    titulo: 'Cómo entendemos la publicidad de servicios de salud',
+    titulo: 'Cómo trabajamos la publicidad de servicios de salud',
     parrafos: [
-      'En México, la publicidad de servicios de salud se rige por la Ley General de Salud y por el Reglamento de la Ley General de Salud en Materia de Publicidad. COFEPRIS —la Comisión Federal para la Protección contra Riesgos Sanitarios— vigila ese terreno. Hay piezas que además requieren permiso antes de difundirse. Este texto es el criterio de trabajo de la agencia, no un dictamen jurídico ni una autorización sanitaria.',
-      'El modo de trabajar es concreto. No se prometen resultados ni tiempos de mejoría. No se garantiza una cura. No se usan testimonios de pacientes como prueba de que un tratamiento funciona. No se arman antes y después para sugerir un desenlace asegurado. No se afirma una superioridad frente a otros consultorios si no hay un sustento que se pueda mostrar. El sitio, la ficha y el anuncio dicen lo mismo.',
-      'Cuando una pieza parece necesitar permiso, o cuando el consultorio quiere decir algo que roza una afirmación clínica, el trabajo se detiene y se señala. La agencia puede dejar el material listo para esa revisión. El permiso, si la norma lo exige, lo resuelve la autoridad. Un abogado sanitario tiene que confirmar el caso concreto: esta página no lo reemplaza.',
-      'COFEPRIS explica su labor en gob.mx/cofepris. La lectura de esa página no sustituye el reglamento ni el trámite que corresponda al servicio que se anuncia.',
+      'En México, la publicidad de servicios de salud se rige por la Ley General de Salud y por el Reglamento de la Ley General de Salud en Materia de Publicidad, y la vigila la Comisión Federal para la Protección contra Riesgos Sanitarios (COFEPRIS). La ley y el reglamento obligan también a las agencias de publicidad: quien elabora el material debe apegarse al aviso o permiso del anunciante.',
+      'De forma general, la publicidad de un profesional que ejerce de manera individual requiere presentar un aviso de publicidad antes de difundirse, mientras que la de un establecimiento, como una clínica, requiere permiso de publicidad. En ambos casos, la publicidad debe indicar la institución que expidió el título y, en su caso, el número de cédula profesional. Cada caso concreto se confirma con el trámite vigente ante COFEPRIS.',
+      'Por eso nuestro método es concreto: no prometemos resultados ni tiempos de mejoría; no ofrecemos curas; no usamos testimonios de pacientes como prueba de eficacia; no publicamos antes y después; no afirmamos superioridad sobre otros profesionales sin sustento, y guardamos la documentación que respalda cada afirmación. Si una pieza requiere aviso o permiso, se lo señalamos y preparamos el material para el trámite.',
+      'Este texto describe el criterio de trabajo de la agencia. No es un dictamen jurídico ni una autorización sanitaria: el permiso lo otorga la autoridad y un abogado sanitario puede confirmar su caso particular.',
     ],
   },
+  cierreTitulo: 'Conversemos sobre su clínica o consultorio',
+  cierreTexto:
+    'Cuéntenos su especialidad, la ciudad donde atiende y si ya tiene sitio web o ficha de Google. Le respondemos con una propuesta clara de por dónde empezar.',
+  inversionEstado: 'Cotización a la medida',
+  inversionTexto:
+    'Cada propuesta se prepara según el tamaño de su clínica o consultorio, las ciudades donde atiende y los servicios que necesita. Escríbanos y le enviamos una cotización por escrito, con el alcance detallado.',
+  inversionEnlace: 'Solicitar cotización',
 } as const;
 
 export const caso = {
-  h1: 'Caso de proceso: MentalCareClinic',
-  lede: 'Este relato describe cómo se trabajó con MentalCareClinic. Es un proceso, no un caso de resultados. No hay cifras, no hay testimonios y no hay pacientes en esta página.',
+  h1: 'Caso MentalCareClinic: el proceso, paso a paso',
+  lede: 'MentalCareClinic es una clínica de salud mental en Chiapas. En esta página contamos cómo trabajamos su comunicación digital, de principio a fin. Es un caso de proceso: los resultados se publicarán cuando estén medidos y con fecha.',
   relacion:
-    'Pedro Luis Maldonado Gordillo es socio de MentalCareClinic. La relación se dice aquí, al inicio, para que el texto no se lea como la opinión de un cliente ajeno a la agencia.',
-  fasesTitulo: 'Las cuatro fases',
+    'Pedro Luis Maldonado Gordillo, fundador de MKT Creativa, es socio de MentalCareClinic. Lo decimos al inicio para que usted lea este caso sabiendo que no se trata de un cliente independiente de la agencia.',
+  fasesTitulo: 'Las cuatro fases del trabajo',
   fases: [
     {
-      titulo: 'Diagnóstico del sitio anterior en Google Sites',
+      titulo: 'Diagnóstico de la presencia digital',
       texto:
-        'El sitio con el que partió la clínica estaba hecho en Google Sites. La fase de diagnóstico revisó qué decía esa página, cómo estaba ordenada y cómo se presentaba el servicio en búsquedas locales. Los hallazgos puntuales de esa revisión no se publican aquí: cuando estén en el expediente y se decida compartirlos, sustituirán este párrafo. No los inventamos para completar el caso.',
+        'Partimos del sitio que la clínica tenía en Google Sites y de cómo aparecía en Google. Revisamos qué decía, cómo estaba organizado, si sus datos de contacto coincidían entre canales y qué frases podían representar un riesgo frente a la norma de publicidad sanitaria.',
     },
     {
-      titulo: 'Estrategia',
+      titulo: 'Estrategia de comunicación',
       texto:
-        'Se definió qué puede decir una clínica de salud mental en público, a quién le habla en Chiapas y qué frases quedan fuera. La estrategia y las páginas siguientes usan ese mismo límite. No incluye una promesa de consulta, de agenda llena ni de un resultado clínico.',
+        'Definimos qué servicios comunica la clínica, a quién se dirige en Chiapas y con qué lenguaje. En salud mental el cuidado es mayor: los mensajes informan sobre el servicio y la forma de solicitarlo, sin prometer resultados clínicos y sin aludir a la condición de salud de quien los lee.',
     },
     {
-      titulo: 'Sitio nuevo, pensado para ser rápido y accesible',
+      titulo: 'Sitio nuevo, rápido y accesible',
       texto:
-        'El sitio nuevo se planteó para cargar rápido, leerse en el teléfono y poder recorrerse con teclado y lector de pantalla. Esta página no publica la dirección del sitio de la clínica ni medidas de velocidad: ambas cosas se agregarán solo cuando sean las oficiales y estén medidas.',
+        'Diseñamos un sitio pensado para cargar rápido, leerse en el teléfono y recorrerse con teclado y lector de pantalla, con WhatsApp como canal principal de contacto y con la información profesional del equipo a la vista.',
     },
     {
       titulo: 'SEO local',
       texto:
-        'La fase de SEO local ordena el servicio, la ciudad y los datos de contacto para que coincidan entre el sitio y la ficha del establecimiento. No se reporta una posición en Google porque no hay una medición cerrada que esta página pueda citar.',
+        'Ordenamos el servicio, la ciudad y los datos de contacto para que coincidan entre el sitio, la ficha de Google y los directorios. El objetivo es que quien busca atención en salud mental en su ciudad encuentre información clara y correcta.',
     },
   ],
-  metricasTitulo: 'Métricas',
-  metricasIntro:
-    'Estos indicadores están reservados. El valor queda en blanco hasta que exista una medición real, con fecha. Un cero no significaría “sin datos”: por eso no usamos cero.',
-  metricas: [
-    'Visitas orgánicas al sitio nuevo',
-    'Consultas atribuibles al canal local',
-    'Presencia en búsquedas locales de Tuxtla Gutiérrez',
-    'Tiempo de carga medido del sitio nuevo',
-  ],
   sinTestimonios:
-    'No hay testimonios en esta página. Tampoco se van a redactar opiniones de pacientes ni de la clínica para llenar el espacio.',
+    'Esta página no incluye testimonios. Nunca publicaremos opiniones de pacientes. Si la dirección de la clínica decide compartir su experiencia con la agencia, la agregaremos con su nombre y su autorización por escrito.',
+  cierreTitulo: '¿Quiere un proceso similar para su clínica?',
   cierre:
-    'Si quiere un proceso parecido para su clínica, la conversación empieza por el servicio que ofrece y por la ciudad donde atiende. No por una cifra de resultados.',
+    'Cada clínica parte de un punto distinto. Cuéntenos qué servicios ofrece y en qué ciudad atiende, y le proponemos por dónde empezar, con un diagnóstico de su presencia digital y de los riesgos de publicidad que detectemos.',
 } as const;
 
 export const boletin = {
-  h1: 'Boletín de MKT Creativa',
-  lede: 'Notas breves para quienes dirigen clínicas y consultorios en Chiapas, con énfasis en salud mental y en lo que sí se puede decir en público. Sale los días 1 y 15.',
-  ritmoTitulo: 'Qué trae cada edición',
+  h1: 'Boletín de MKT Creativa para clínicas y consultorios',
+  lede: 'Notas breves y prácticas para quienes dirigen clínicas y consultorios en Chiapas: cómo darse a conocer, cómo cuidar su presencia en Google y qué se puede decir en público según la norma sanitaria. Se publica una vez al mes.',
+  ritmoTitulo: 'Qué encontrará en cada edición',
   ritmo: [
-    'Un tema principal, concreto, no un manifiesto.',
-    'Dos o tres notas breves. Cabemos en una lectura corta.',
-    'Un solo llamado a la acción.',
-    'Nada de promesas de resultados, cifras inventadas ni datos de pacientes.',
+    'Un tema principal, explicado de forma concreta y aplicable a su consultorio.',
+    'Dos o tres notas breves sobre Google, redes sociales o publicidad de salud.',
+    'Un recordatorio práctico de cumplimiento con la norma de COFEPRIS.',
+    'Un solo llamado a la acción, sin saturar su bandeja.',
+    'Sin promesas de resultados, sin cifras sin fuente y sin datos de pacientes.',
   ],
-  vacioTitulo: 'Archivo',
+  vacioTitulo: 'Ediciones',
   vacio:
-    'Todavía no hay ediciones publicadas. La primera saldrá en un día 1 o en un día 15, cuando el plan de contenidos esté cerrado. Si deja su correo cuando el formulario esté conectado, le avisamos. Hoy ese formulario está desactivado y no envía nada.',
-  archivoTitulo: 'Ediciones',
-  rss: 'RSS del boletín',
+    'La primera edición está en preparación. Cuando el formulario esté activo, podrá suscribirse aquí para recibirla.',
+  archivoTitulo: 'Ediciones anteriores',
+  rss: 'Seguir el boletín por RSS',
+} as const;
+
+export const formularioBoletinTextos = {
+  titulo: 'Reciba el boletín',
+  ayudaActiva:
+    'Déjenos su nombre y su correo. Le enviaremos cada edición por correo electrónico y puede darse de baja en cualquier momento.',
+  leyendaActiva: 'Datos para recibir el boletín',
+  placeholderNombre: 'Su nombre',
+  placeholderCorreo: 'nombre@suclinica.mx',
+  casilla: 'Acepto que MKT Creativa use mi nombre y mi correo solo para enviarme el boletín.',
+  boton: 'Suscribirme',
+  exito: 'Gracias. Revise su correo para confirmar la suscripción.',
+  errorCampos: 'Revise que su nombre y su correo estén escritos correctamente.',
+  errorCasilla: 'Para enviarle el boletín necesitamos su consentimiento. Marque la casilla para continuar.',
+  ayudaApagada:
+    'La suscripción todavía no está disponible. Muy pronto podrá registrarse aquí; mientras tanto, puede escribirnos por WhatsApp.',
+  ayudaSecreto:
+    'La suscripción está desactivada: la URL configurada parece incluir un secreto. No se enviará nada. Use solo la URL pública del formulario, nunca la API key.',
+  ayudaInvalida:
+    'La suscripción está desactivada: la URL del formulario no es una dirección https válida. No se enviará nada.',
+  leyendaApagada: 'Suscripción no disponible',
+  botonApagado: 'Suscripción próximamente',
 } as const;
 
 export const contacto = {
-  h1: 'Contacto en Tuxtla Gutiérrez',
-  lede: 'El contacto principal es WhatsApp. También puede llamar al mismo número. La dirección y el horario se publicarán cuando estén confirmados: no ponemos un domicilio provisional.',
+  h1: 'Hablemos de su clínica o consultorio',
+  lede: 'La forma más rápida de contactarnos es WhatsApp. También puede llamarnos al mismo número. Cuéntenos su especialidad, la ciudad donde atiende y qué le gustaría mejorar de su presencia digital, y le respondemos con una propuesta de primer paso.',
   avisoClinica:
-    'MKT Creativa no presta servicios de salud y no agenda pacientes. No envíe datos clínicos, estudios ni información de personas atendidas por estos medios.',
-  canalesTitulo: 'Canales',
+    'MKT Creativa es una agencia de marketing: no presta servicios de salud ni agenda consultas. Por favor, no nos envíe datos clínicos, estudios ni información de sus pacientes por ningún medio.',
+  canalesTitulo: 'Canales de contacto',
   datosTitulo: 'Datos de la agencia',
+  atendemos: 'Clínicas, consultorios y profesionales de la salud de Chiapas',
 } as const;
 
 export const errorPagina = {
   h1: 'Esta página no existe',
-  lede: 'El enlace no corresponde a una página de MKT Creativa. Puede volver al inicio, ver los servicios o escribir por WhatsApp.',
+  lede: 'Es posible que el enlace haya cambiado. Puede volver al inicio, ver nuestros servicios o escribirnos por WhatsApp.',
 } as const;
 
-export const avisoCorto =
-  'MKT Creativa ([RAZÓN SOCIAL], domicilio [DOMICILIO]) usará su nombre y su correo únicamente para enviarle el boletín los días 1 y 15. Esa finalidad depende de la casilla de consentimiento. No se piden datos de salud. Puede no marcar la casilla, y cuando exista el correo de privacidad ([CORREO DE PRIVACIDAD]) podrá pedir la baja o limitar este uso.';
+export const jsonLdDescripcion =
+  'Agencia de marketing y publicidad para clínicas y profesionales de la salud en Chiapas. Estrategia, sitio web y SEO local con criterio de cumplimiento de la regulación sanitaria (COFEPRIS) y énfasis en salud mental. No promete resultados.';
+
+export const pie = {
+  linea:
+    'MKT Creativa es una agencia de marketing. No presta servicios de salud, no atiende pacientes ni recibe datos clínicos.',
+  derechos: 'MKT Creativa © 2026. Tuxtla Gutiérrez, Chiapas.',
+} as const;

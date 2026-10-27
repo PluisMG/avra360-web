@@ -118,21 +118,6 @@ a:hover {
   border: 0;
 }
 
-.banda-provisional {
-  background: var(--bosque);
-  color: var(--papel);
-}
-
-.banda-provisional p {
-  margin: 0;
-  padding-block: 0.75rem;
-  font-size: 0.9375rem;
-}
-
-.banda-provisional strong {
-  font-weight: 750;
-}
-
 .cabecera {
   background: var(--papel);
   border-bottom: 1px solid var(--linea);
@@ -631,6 +616,11 @@ input[type="email"] {
   font: inherit;
 }
 
+input::placeholder {
+  color: var(--tinta-suave);
+  opacity: 1;
+}
+
 .casilla {
   display: flex;
   gap: 0.75rem;
@@ -818,6 +808,10 @@ input[type="email"] {
     gap: 1.5rem;
   }
 
+  .rejilla-2:has(> :nth-child(3)) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
   .pie__rejilla {
     grid-template-columns: 0.8fr 1.2fr;
     gap: 2.5rem;
@@ -839,7 +833,6 @@ input[type="email"] {
 }
 
 @media print {
-  .banda-provisional,
   .consentimiento,
   .menu summary,
   .boton--cabecera {

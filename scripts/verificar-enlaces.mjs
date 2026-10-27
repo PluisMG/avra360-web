@@ -1,5 +1,6 @@
 import { readFile, readdir, stat } from 'node:fs/promises';
 import path from 'node:path';
+import { revisarDirectorioPublico } from '../src/config/publicacion.ts';
 
 const dist = path.resolve('dist');
 const errores = [];
@@ -151,6 +152,7 @@ else {
       const locs = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((coincidencia) => new URL(coincidencia[1]).pathname);
       for (const loc of locs) {
         if (loc.includes('/boletin/ejemplo-')) anotar(`El sitemap incluye la edición de ejemplo: ${loc}`);
+        if (loc.includes('/aviso-de-privacidad')) anotar(`El sitemap incluye el aviso de privacidad: ${loc}`);
         if (!(await existeRuta(loc))) anotar(`El sitemap enlaza a ${loc}, que no está en dist/.`);
       }
     }
@@ -158,6 +160,10 @@ else {
 }
 
 if (!(await existeRuta('/404'))) anotar('Falta la página 404.');
+if (await existeRuta('/aviso-de-privacidad')) {
+  anotar('El aviso de privacidad no debe salir en el build público.');
+}
+for (const hallazgo of await revisarDirectorioPublico(dist)) anotar(hallazgo);
 
 if (errores.length) {
   console.error(errores.map((error) => `- ${error}`).join('\n'));

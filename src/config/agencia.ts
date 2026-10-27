@@ -1,6 +1,6 @@
 /**
- * Datos públicos de la agencia. Lo que no está confirmado vive como marcador,
- * nunca como un dato inventado.
+ * Datos públicos de la agencia. Razón social, domicilio, horario y correos
+ * no se publican hasta que Pedro los confirme: no hay marcadores en el HTML.
  */
 export const agencia = {
   nombre: 'MKT Creativa',
@@ -53,7 +53,6 @@ export const navegacion = [
 
 export const navegacionPie = [
   ...navegacion,
-  { href: '/aviso-de-privacidad', etiqueta: 'Aviso de privacidad' },
   { href: '/boletin/rss.xml', etiqueta: 'RSS del boletín' },
 ] as const;
 
@@ -63,15 +62,13 @@ export function enlaceWhatsapp(mensaje: string) {
 
 export const mensajesWhatsapp = {
   inicio:
-    'Hola. Vi el sitio de MKT Creativa y quiero platicar sobre el marketing de mi clínica o consultorio en Chiapas.',
+    'Hola. Vi el sitio de MKT Creativa y me interesa conversar sobre el marketing de mi clínica o consultorio en Chiapas.',
   servicios:
-    'Hola. Quiero conocer los servicios de estrategia, sitio web y SEO local de MKT Creativa para un servicio de salud.',
-  caso:
-    'Hola. Leí el proceso de MentalCareClinic en el sitio de MKT Creativa y quiero conversar sobre el de mi clínica.',
-  boletin: 'Hola. Quiero información sobre el boletín de MKT Creativa.',
-  contacto: 'Hola. Quiero contactar a MKT Creativa.',
+    'Hola. Me interesan los servicios de MKT Creativa para mi clínica o consultorio y quiero recibir una cotización.',
+  caso: 'Hola. Leí el caso de MentalCareClinic en el sitio de MKT Creativa y me interesa un proceso similar para mi clínica.',
+  boletin: 'Hola. Quiero recibir el boletín de MKT Creativa para clínicas y consultorios.',
+  contacto: 'Hola. Quiero hablar con MKT Creativa sobre el marketing de mi clínica o consultorio.',
   aviso: 'Hola. Tengo una duda sobre el aviso de privacidad de MKT Creativa.',
   error: 'Hola. No encontré una página en el sitio de MKT Creativa y necesito orientación.',
-  ejemplo:
-    'Hola. Vi la edición de ejemplo del boletín de MKT Creativa y quiero información.',
+  ejemplo: 'Hola. Vi la edición de ejemplo del boletín de MKT Creativa y quiero más información.',
 } as const;
