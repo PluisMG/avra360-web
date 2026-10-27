@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import sitemap from '@astrojs/sitemap';
 import type { AstroIntegration } from 'astro';
 import { defineConfig, envField } from 'astro/config';
+import { politicaCsp } from './src/config/csp';
 
 const sitio = resolverSitio(process.env.SITE ?? 'https://mktcreativa.example');
 
@@ -22,21 +23,6 @@ function resolverSitio(valor: string) {
     throw new Error('SITE debe usar http o https.');
   }
   return url.origin;
-}
-
-function origenFormulario() {
-  const action = process.env.PUBLIC_MAILERLITE_FORM_ACTION?.trim();
-  if (!action) return undefined;
-  try {
-    const url = new URL(action);
-    const secreto = [...url.searchParams.keys()].some((clave) =>
-      /api[_-]?key|token|secret|password/i.test(clave),
-    );
-    if (url.protocol === 'https:' && !secreto) return url.origin;
-  } catch {
-    return undefined;
-  }
-  return undefined;
 }
 
 async function listarHtml(directorio: string): Promise<string[]> {
@@ -87,21 +73,10 @@ function encabezadosCloudflare(): AstroIntegration {
 
         if (!jsonLd) throw new Error('No se encontró el JSON-LD.');
         const hash = createHash('sha256').update(jsonLd, 'utf8').digest('base64');
-        const formulario = origenFormulario();
-        const formAction = formulario ? `'self' ${formulario}` : `'self'`;
-        const csp = [
-          "default-src 'self'",
-          `script-src 'self' 'sha256-${hash}' https://www.googletagmanager.com https://connect.facebook.net`,
-          "style-src 'self'",
-          "img-src 'self' data: https://www.google-analytics.com https://www.googletagmanager.com https://www.facebook.com",
-          "connect-src 'self' https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com https://connect.facebook.net https://www.facebook.com",
-          "font-src 'self'",
-          "object-src 'none'",
-          "base-uri 'self'",
-          `form-action ${formAction}`,
-          "frame-ancestors 'none'",
-          "frame-src 'none'",
-        ].join('; ');
+        const csp = politicaCsp({
+          hash,
+          accionFormulario: process.env.PUBLIC_MAILERLITE_FORM_ACTION,
+        });
 
         const cuerpo = [
           '/*',

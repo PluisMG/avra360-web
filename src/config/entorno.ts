@@ -8,6 +8,7 @@ import {
   PUBLIC_META_PIXEL_ID,
   PUBLIC_MOSTRAR_EDICION_EJEMPLO,
 } from 'astro:env/server';
+import { clasificarAccionFormulario } from './csp';
 
 function limpio(valor: string | undefined) {
   const texto = valor?.trim() ?? '';
@@ -66,30 +67,14 @@ export type FormularioBoletin =
  * No existe ninguna variable para la API key de MailerLite: no debe llegar al cliente.
  */
 export function formularioBoletin(): FormularioBoletin {
-  const crudo = limpio(PUBLIC_MAILERLITE_FORM_ACTION);
-  if (!crudo) return { listo: false, motivo: 'sin-configuracion' };
-
-  let url: URL;
-  try {
-    url = new URL(crudo);
-  } catch {
-    return { listo: false, motivo: 'url-invalida' };
-  }
-
-  if (url.protocol !== 'https:' || url.username || url.password) {
-    return { listo: false, motivo: 'url-invalida' };
-  }
-
-  const pareceSecreto = [...url.searchParams.keys()].some((clave) =>
-    /api[_-]?key|token|secret|password/i.test(clave),
-  );
-  if (pareceSecreto) return { listo: false, motivo: 'parece-secreto' };
+  const accion = clasificarAccionFormulario(PUBLIC_MAILERLITE_FORM_ACTION);
+  if (!accion.lista) return { listo: false, motivo: accion.motivo };
 
   const consentimiento = limpio(PUBLIC_MAILERLITE_CONSENT_FIELD);
 
   return {
     listo: true,
-    action: url.toString(),
+    action: accion.action,
     campoCorreo: campo(PUBLIC_MAILERLITE_EMAIL_FIELD, 'fields[email]'),
     campoNombre: campo(PUBLIC_MAILERLITE_NAME_FIELD, 'fields[name]'),
     campoConsentimiento:

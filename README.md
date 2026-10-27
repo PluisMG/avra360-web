@@ -118,6 +118,7 @@ El formulario del boletín (en `/boletin` y en el pie) está listo, pero la cuen
 - Si los campos no se llaman `fields[email]` y `fields[name]`, defina `PUBLIC_MAILERLITE_EMAIL_FIELD` y `PUBLIC_MAILERLITE_NAME_FIELD`.
 - Si el formulario de MailerLite tiene un campo para guardar el consentimiento, ponga su nombre en `PUBLIC_MAILERLITE_CONSENT_FIELD`. Si no, la casilla igual es obligatoria en el navegador y no se envía con un nombre inventado.
 - Sin una URL https válida, el formulario se muestra desactivado, con un mensaje claro, y el botón no envía nada.
+- Con URL válida, el build añade su origen (el host real, por ejemplo `https://assets.mailerlite.com`) a `form-action` de la CSP. Sin URL, `form-action` queda en `'self'`. El envío es un POST del formulario, así que no hace falta abrir `connect-src`.
 - Si la URL trae un parámetro `api_key`, `token`, `secret` o `password`, el formulario también se queda desactivado.
 
 La casilla de consentimiento y el enlace al aviso de privacidad están en los dos estados.
