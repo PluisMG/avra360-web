@@ -1,5 +1,8 @@
 ---
 import '../styles/global.css';
+import { createHash } from 'node:crypto';
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
 import { getCollection } from 'astro:content';
 import { agencia } from '../config/agencia';
 import { vistaPrevia } from '../config/entorno';
@@ -37,6 +40,9 @@ const slugsServicio = paginas.filter((pagina) => pagina.data.tipo === 'servicio'
 const origen = Astro.site?.origin ?? new URL(canonica).origin;
 const jsonLd = jsonLdOrganizacion(origen, slugsServicio);
 const imagen = new URL('/og.png', canonica).href;
+const integridadConsentimiento = createHash('sha256')
+  .update(readFileSync(path.join(process.cwd(), 'public/scripts/consentimiento.js')))
+  .digest('base64');
 ---
 
 <!doctype html>
@@ -50,6 +56,7 @@ const imagen = new URL('/og.png', canonica).href;
     <meta name="theme-color" content="#143f38" />
     <meta name="color-scheme" content="light" />
     <link rel="canonical" href={canonica} />
+    <link rel="icon" href="/favicon.ico" sizes="any" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="alternate" type="application/rss+xml" title={`Boletín ${agencia.nombre}`} href="/boletin/rss.xml" />
     <meta property="og:locale" content="es_MX" />
@@ -79,6 +86,11 @@ const imagen = new URL('/og.png', canonica).href;
     </main>
     <Consentimiento />
     <Pie mensaje={mensajeWhatsapp} />
-    <script is:inline src="/scripts/consentimiento.js" defer></script>
+    <script
+      is:inline
+      type="module"
+      src="/scripts/consentimiento.js"
+      integrity={`sha256-${integridadConsentimiento}`}
+      crossorigin="anonymous"></script>
   </body>
 </html>

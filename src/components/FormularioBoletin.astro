@@ -1,6 +1,7 @@
 ---
 import { formularioBoletin } from '../config/entorno';
 import { formularioBoletinTextos as textos } from '../config/textos';
+import Trampa from './Trampa.astro';
 
 interface Props {
   identificador: string;
@@ -17,6 +18,7 @@ const ayuda = `${identificador}-ayuda`;
     formulario.listo ? (
       <>
         <form method="post" action={formulario.action} aria-describedby={ayuda}>
+          <Trampa />
           <fieldset>
             <legend class="solo-lectores">{textos.leyendaActiva}</legend>
             <p id={ayuda}>{textos.ayudaActiva}</p>
@@ -62,6 +64,7 @@ const ayuda = `${identificador}-ayuda`;
               : textos.ayudaApagada}
         </p>
         <form aria-describedby={ayuda} aria-disabled="true">
+          <Trampa />
           <fieldset disabled>
             <legend class="solo-lectores">{textos.leyendaApagada}</legend>
             <label class="campo">

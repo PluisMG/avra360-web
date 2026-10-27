@@ -54,7 +54,22 @@ if (htmls.length === 0) anotar('No hay HTML en dist/. Ejecute npm run build.');
 
 const encabezados = await readFile(path.join(dist, '_headers'), 'utf8').catch(() => '');
 if (!encabezados.includes('Content-Security-Policy')) anotar('Falta _headers con Content-Security-Policy.');
-const scriptSrc = encabezados ? directiva(encabezados.match(/Content-Security-Policy:\s*(.+)/)?.[1] ?? '', 'script-src') : '';
+if (!encabezados.includes('Strict-Transport-Security: max-age=31536000')) {
+  anotar('Falta Strict-Transport-Security: max-age=31536000.');
+}
+const cspLinea = encabezados.match(/Content-Security-Policy:\s*(.+)/)?.[1] ?? '';
+const scriptSrc = encabezados ? directiva(cspLinea, 'script-src') : '';
+if (scriptSrc && !scriptSrc.includes("'strict-dynamic'")) anotar("La CSP no incluye 'strict-dynamic'.");
+const tieneReportTo = /\breport-to\b/.test(cspLinea);
+const tieneReportUri = /\breport-uri\b/.test(cspLinea);
+const tieneEndpoints = encabezados.includes('Reporting-Endpoints:');
+if (tieneReportTo !== tieneReportUri || tieneReportTo !== tieneEndpoints) {
+  anotar('report-to, report-uri y Reporting-Endpoints deben publicarse juntos, y solo cuando hay CSP_REPORT_URL.');
+}
+const redirects = await readFile(path.join(dist, '_redirects'), 'utf8').catch(() => '');
+for (const regla of ['/index.html / 301', '/*/index.html /:splat 301', '/*/ /:splat 301', '/sitemap.xml /sitemap-index.xml 301']) {
+  if (!redirects.includes(regla)) anotar(`Falta la redirección «${regla}».`);
+}
 
 let origen;
 const origenes = new Set();
@@ -156,6 +171,26 @@ for (const archivo of htmls) {
   if (/api[_-]?key\s*[:=]|MAILERLITE_API|sk_live|AKIA[0-9A-Z]{8,}|xoxb-|BEGIN PRIVATE KEY/i.test(html)) {
     anotar(`${publica} parece contener un secreto.`);
   }
+  if (!html.includes('href="/favicon.ico"')) anotar(`${publica} no enlaza favicon.ico.`);
+  if (!html.includes('src="/scripts/consentimiento.js"') || !/integrity="sha256-[^"]+"/.test(html)) {
+    anotar(`${publica} no publica el script de consentimiento con integrity.`);
+  }
+  if (scriptSrc) {
+    const integridad = html.match(/integrity="sha256-([^"]+)"/);
+    if (integridad && !scriptSrc.includes(`'sha256-${integridad[1]}'`)) {
+      anotar(`${publica} tiene un script cuyo hash no está en la CSP.`);
+    }
+  }
+  if (html.includes('href="#consentimiento"') || !/<button\b[^>]*id="consent-reabrir"/.test(html)) {
+    anotar(`${publica} debe reabrir las cookies con un botón, sin navegar a #consentimiento.`);
+  }
+  if (!html.includes('class="trampa"') || !html.includes('aria-hidden="true"') || !html.includes('name="empresa_web"')) {
+    anotar(`${publica} no tiene el campo oculto del formulario.`);
+  }
+  if (!html.includes('tabindex="-1"') || !html.includes('autocomplete="off"')) {
+    anotar(`${publica} no esconde el campo del formulario como se pidió.`);
+  }
+  if (html.includes('banda-provisional')) anotar(`${publica} todavía tiene la banda provisional.`);
 }
 
 async function revisarInterna(desde, valor) {
@@ -195,8 +230,8 @@ async function archivoDe(ruta) {
 const robotsPath = path.join(dist, 'robots.txt');
 const robots = await readFile(robotsPath, 'utf8').catch(() => '');
 if (!robots.includes('User-agent:')) anotar('Falta robots.txt.');
-if (!robots.includes('Disallow: /') && !robots.includes('Sitemap:')) {
-  anotar('robots.txt no permite el sitio ni declara el sitemap.');
+if (!robots.includes('Disallow: /') && !robots.includes('/sitemap.xml')) {
+  anotar('robots.txt de producción debe declarar /sitemap.xml.');
 }
 
 const sitemap = await readFile(path.join(dist, 'sitemap-index.xml'), 'utf8').catch(() => '');
@@ -231,6 +266,8 @@ if (atom) anotarOrigen(atom[1]);
 if (rss.includes('{{')) anotar('El RSS contiene un marcador {{.');
 
 if (!(await existeRuta('/logo-512.png'))) anotar('Falta logo-512.png en el build.');
+if (!(await existeRuta('/favicon.ico'))) anotar('Falta favicon.ico.');
+if (!(await existeRuta('/sitemap.xml'))) anotar('Falta sitemap.xml.');
 if (origenes.size > 1) {
   anotar(`Canonical, Open Graph, sitemap, RSS o schema no comparten un solo origen: ${[...origenes].join(', ')}.`);
 }

@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import sitemap from '@astrojs/sitemap';
 import type { AstroIntegration } from 'astro';
 import { defineConfig, envField } from 'astro/config';
-import { politicaCsp } from './src/config/csp';
+import { clasificarReporteCsp, encabezadoReportingEndpoints, politicaCsp } from './src/config/csp';
 import { mapaLastmodBoletin } from './src/config/ediciones-sitemap';
 import { revisarDirectorioPublico } from './src/config/publicacion';
 
@@ -85,19 +85,40 @@ function encabezadosCloudflare(): AstroIntegration {
         }
 
         if (cuerposJsonLd.size === 0) throw new Error('No se encontró el JSON-LD.');
-        const hashes = [...cuerposJsonLd].map((cuerpo) => createHash('sha256').update(cuerpo, 'utf8').digest('base64'));
+        const scriptConsent = await readFile(path.join(raiz, 'scripts/consentimiento.js'));
+        const hashConsent = createHash('sha256').update(scriptConsent).digest('base64');
+        const htmlInicio = await readFile(inicio, 'utf8');
+        if (!htmlInicio.includes(`integrity="sha256-${hashConsent}"`)) {
+          throw new Error('El integrity del script de consentimiento no coincide con el archivo publicado.');
+        }
+        const hashes = [
+          ...[...cuerposJsonLd].map((cuerpo) => createHash('sha256').update(cuerpo, 'utf8').digest('base64')),
+          hashConsent,
+        ];
+        const reporte = clasificarReporteCsp(process.env.CSP_REPORT_URL);
+        if (!reporte.lista && reporte.motivo === 'url-invalida') {
+          throw new Error('CSP_REPORT_URL debe ser una URL https absoluta, sin usuario ni contraseña.');
+        }
         const csp = politicaCsp({
           hashes,
           accionFormulario: process.env.PUBLIC_MAILERLITE_FORM_ACTION,
+          reporte: reporte.lista ? reporte.url : undefined,
         });
 
-        const cuerpo = [
+        const lineasEncabezado = [
           '/*',
           '  X-Content-Type-Options: nosniff',
           '  Referrer-Policy: strict-origin-when-cross-origin',
           '  X-Frame-Options: DENY',
           '  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()',
+          '  Strict-Transport-Security: max-age=31536000',
           `  Content-Security-Policy: ${csp}`,
+        ];
+        if (reporte.lista) {
+          lineasEncabezado.push(`  Reporting-Endpoints: ${encabezadoReportingEndpoints(reporte.url)}`);
+        }
+        const cuerpo = [
+          ...lineasEncabezado,
           '',
           '/_astro/*',
           '  Cache-Control: public, max-age=31536000, immutable',
@@ -108,6 +129,12 @@ function encabezadosCloudflare(): AstroIntegration {
         ].join('\n');
 
         await writeFile(path.join(raiz, '_headers'), cuerpo, 'utf8');
+
+        const indice = path.join(raiz, 'sitemap-index.xml');
+        const mapa = await readFile(indice).catch(() => {
+          throw new Error('No se encontró sitemap-index.xml para publicar /sitemap.xml.');
+        });
+        await writeFile(path.join(raiz, 'sitemap.xml'), mapa);
 
         const hallazgos = await revisarDirectorioPublico(raiz);
         if (hallazgos.length > 0) {

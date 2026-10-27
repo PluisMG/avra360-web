@@ -1,6 +1,12 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { clasificarAccionFormulario, directiva, politicaCsp } from './csp.ts';
+import {
+  clasificarAccionFormulario,
+  clasificarReporteCsp,
+  directiva,
+  encabezadoReportingEndpoints,
+  politicaCsp,
+} from './csp.ts';
 
 const hash = 'abc123';
 const accionMailerLite = 'https://assets.mailerlite.com/jsonp/1/forms/2/subscribe';
@@ -43,5 +49,32 @@ describe('CSP del formulario de MailerLite', () => {
     assert.equal(directiva(conSecreto, 'form-action'), "'self'");
     assert.equal(directiva(http, 'form-action'), "'self'");
     assert.equal(clasificarAccionFormulario(`${accionMailerLite}?token=x`).lista, false);
+  });
+
+  it('usa strict-dynamic y no emite report-to si no hay URL', () => {
+    const csp = cspDe();
+    const script = directiva(csp, 'script-src') ?? '';
+    assert.equal(script.includes("'strict-dynamic'"), true);
+    assert.equal(csp.includes('report-to'), false);
+    assert.equal(csp.includes('report-uri'), false);
+  });
+});
+
+describe('reporte de CSP', () => {
+  const url = 'https://reportes.ejemplo/csp';
+
+  it('con una URL https agrega report-uri, report-to y Reporting-Endpoints', () => {
+    const csp = politicaCsp({ hashes: [hash], reporte: url });
+    assert.equal(directiva(csp, 'report-uri'), url);
+    assert.equal(directiva(csp, 'report-to'), 'csp-endpoint');
+    assert.equal(encabezadoReportingEndpoints(url), `csp-endpoint="${url}"`);
+  });
+
+  it('sin variable no clasifica un endpoint y rechaza http o userinfo', () => {
+    assert.equal(clasificarReporteCsp(undefined).lista, false);
+    assert.equal(clasificarReporteCsp('').lista, false);
+    assert.equal(clasificarReporteCsp('http://reportes.ejemplo/csp').lista, false);
+    assert.equal(clasificarReporteCsp('https://user:pass@reportes.ejemplo/csp').lista, false);
+    assert.throws(() => politicaCsp({ hashes: [hash], reporte: 'http://reportes.ejemplo/csp' }));
   });
 });

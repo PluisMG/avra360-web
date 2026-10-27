@@ -46,16 +46,17 @@ Cuando se decida publicar, el proyecto estático se puede conectar a Cloudflare 
 - Directorio de salida: `dist`
 - Node.js 22
 
-El build escribe `dist/_headers` (seguridad y caché de assets). `wrangler.jsonc` deja `assets.html_handling` en `drop-trailing-slash` y la 404 en `not_found_handling`. Ese archivo no despliega nada: no ejecute `wrangler deploy` desde este repositorio. No hay `_redirects`: todavía no hay dominio que redirigir y no se debe forzar uno.
+El build escribe `dist/_headers` (seguridad, HSTS y caché de assets) y copia `public/_redirects`. Esas redirecciones responden 301 a la forma canónica: `/index.html` va a `/`, las rutas con barra final pierden la barra, y `/sitemap.xml` apunta a `sitemap-index.xml`. `wrangler.jsonc` deja `assets.html_handling` en `drop-trailing-slash` y la 404 en `not_found_handling`. Ese archivo no despliega nada: no ejecute `wrangler deploy` desde este repositorio.
 
 Variables útiles en el panel, ninguna de ellas es secreta:
 
-- `SITE` — URL canónica https del dominio propio. Si no se define, el build usa `https://mktcreativa.example`, un marcador que no debe quedarse en producción.
+- `SITE` — URL canónica https del dominio propio. **El lanzamiento la exige.** Hay que compilar con `SITE=https://el-dominio-real` y sin `PREVIEW`. Si no se define, el build usa `https://mktcreativa.example`, un marcador que no puede publicarse.
 - `PREVIEW` — `1` para un build de vista previa.
 - `PUBLIC_MOSTRAR_EDICION_EJEMPLO`
 - `PUBLIC_MAILERLITE_FORM_ACTION` y, si hace falta, los nombres de campo.
 - `PUBLIC_GA4_ID`
 - `PUBLIC_META_PIXEL_ID`
+- `CSP_REPORT_URL` — déjela sin definir. No hay recolector. Si más adelante existe una URL https del propio recolector, el build añade `report-uri`, `report-to` y `Reporting-Endpoints`. Sin esa variable, esos encabezados no se emiten. No invente un endpoint y no ponga un secreto: la URL queda publicada en la CSP.
 
 No cree una variable pública para la API key de MailerLite. El sitio no la usa y no debe estar en el cliente.
 
@@ -130,6 +131,7 @@ El formulario del boletín (en `/boletin` y en el pie) está listo, pero la cuen
 - Con URL válida, el build añade su origen (el host real, por ejemplo `https://assets.mailerlite.com`) a `form-action` de la CSP. Sin URL, `form-action` queda en `'self'`. El envío es un POST del formulario, así que no hace falta abrir `connect-src`.
 - Si la URL trae un parámetro `api_key`, `token`, `secret` o `password`, el formulario también se queda desactivado.
 - Aunque la URL sea válida, el formulario sigue desactivado mientras `avisoPublico` sea `false` en `src/config/publicacion.ts`. Hoy lo es: falta el aviso de privacidad. El estado desactivado no enlaza a esa página.
+- Hay un campo oculto, fuera de pantalla, con `tabindex="-1"`, `autocomplete="off"` y `aria-hidden` en su contenedor. Si viene lleno, el navegador no envía el formulario. Si viene vacío, no se incluye en el POST.
 
 Cuando el aviso pueda publicarse, el formulario activo usa la casilla de consentimiento y el enlace «Leer el aviso de privacidad».
 
@@ -139,9 +141,11 @@ En `src/config/agencia.ts`, `mostrarPrecios` está en `false`. `/servicios` mues
 
 ## Analítica
 
-`PUBLIC_GA4_ID` (formato `G-…`) y `PUBLIC_META_PIXEL_ID` (solo dígitos) se leen en el build. El script `public/scripts/consentimiento.js` los inserta **solo** si existen y la persona pulsa «Aceptar analítica». La decisión se guarda en el navegador. «Rechazar» no carga nada. Sin identificadores, aceptar tampoco carga nada.
+`PUBLIC_GA4_ID` (formato `G-…`) y `PUBLIC_META_PIXEL_ID` (solo dígitos) se leen en el build. El script `public/scripts/consentimiento.js` los inserta **solo** si existen y la persona pulsa «Aceptar analítica». La decisión se guarda en el navegador. «Rechazar» no carga nada y borra las cookies `_ga`, `_ga_*` y `_fbp` del dominio actual y del dominio padre. Sin identificadores, aceptar tampoco carga nada.
 
-«Preferencias de cookies», en el pie, vuelve a mostrar la pregunta.
+Con el consentimiento aceptado, un clic en `wa.me` envía `contacto_whatsapp` y un clic en `tel:` envía `contacto_llamada`. Los dos van a GA4 si hay identificador. Si el píxel está configurado, los dos salen además como evento `Contact`. Sin consentimiento no se envía nada.
+
+«Preferencias de cookies», en el pie, es un botón: vuelve a mostrar el aviso y no cambia la URL.
 
 ## Aviso de privacidad
 
@@ -203,13 +207,13 @@ El menú arma «Servicios» como submenú solo con las páginas de servicio cuyo
 
 ## SEO
 
-El dominio canónico sale de la variable `SITE`. Si no está definida, el build usa `https://mktcreativa.example` y ese valor no debe quedarse en producción. Canonical, `og:url`, sitemap, RSS y JSON-LD usan ese origen.
+El dominio canónico sale de la variable `SITE`. **Publicar el sitio exige compilar con `SITE` en el dominio real y sin `PREVIEW`.** Si no está definida, el build usa `https://mktcreativa.example` y ese valor no puede quedarse en el lanzamiento. Canonical, `og:url`, sitemap, RSS y JSON-LD usan ese origen.
 
 Cada página tiene título y meta descripción propios, un solo `h1`, Open Graph y canónica. El JSON-LD de todo el sitio es un `@graph` con `ProfessionalService`, `Person` y `WebSite`. Cada edición del boletín añade `Article` y `BreadcrumbList`, con `og:type=article`. El teléfono publicado es +52 961 191 9199. No hay razón social, domicilio, horario, correo, precios, `sameAs` ni coordenadas: si un dato no está confirmado, la propiedad no se escribe. El logo del schema es `/logo-512.png`.
 
-La CSP lista un hash `sha256` por cada bloque JSON-LD distinto, dentro de `<script type="application/ld+json">`. El build falla si ese JSON no se puede leer o trae `{{`.
+La CSP lista `strict-dynamic` y un hash `sha256` por cada bloque JSON-LD distinto, dentro de `<script type="application/ld+json">`, más el hash del script de consentimiento. Así ese script puede insertar GA4 y el píxel después del consentimiento. `'self'` y los hosts de analítica se quedan como respaldo de navegadores que ignoran `strict-dynamic`. El build falla si ese JSON no se puede leer o trae `{{`. `report-uri`, `report-to` y `Reporting-Endpoints` solo se escriben si `CSP_REPORT_URL` es una URL https válida.
 
-El sitemap se genera en el build. La edición de ejemplo no se incluye. `lastmod` se escribe solo en las ediciones reales, con `modificado` o, si no viene, `fecha`.
+El sitemap se genera en el build. `/sitemap.xml` repite el índice y, en Cloudflare, redirige a `sitemap-index.xml`. En producción, `robots.txt` declara `/sitemap.xml`. La edición de ejemplo no se incluye. `lastmod` se escribe solo en las ediciones reales, con `modificado` o, si no viene, `fecha`.
 
 En el boletín, el frontmatter puede traer `slug` (si la URL no debe ser el nombre del archivo), `modificado`, `autor`, `fuentes` (URLs https, salen como `citation`), `palabras` y `sufijo: false` cuando el título no deba llevar « | MKT Creativa». Cada edición enlaza a la anterior y a la siguiente cuando existen. El RSS incluye el HTML de las notas, `dc:creator` y `atom:link rel="self"`. No se inventa un correo de autor.
 
@@ -223,7 +227,7 @@ Estos datos no aparecen en el sitio. No hay marcadores en su lugar:
 - Métricas del caso, cuando exista una medición con fecha. Los indicadores previstos son: visitas orgánicas al sitio nuevo, conversaciones de WhatsApp iniciadas desde el sitio, presencia en búsquedas locales de Tuxtla Gutiérrez y tiempo de carga medido del sitio nuevo
 - Hallazgos del diagnóstico de MentalCareClinic, fecha y dirección del sitio nuevo, y estado de su ficha de Google, si Pedro autoriza publicarlos
 - Condiciones del piloto y testimonio de la dirección, solo con autorización
-- Dominio real (`SITE`). Hasta entonces el valor por defecto es `https://mktcreativa.example`
+- Dominio real (`SITE`). El lanzamiento no puede salir con `https://mktcreativa.example` ni con `PREVIEW=1`
 - Texto de Creativo para `marketing-para-psicologos`, `diagnostico-digital`, `nosotros` y las guías que todavía no tienen archivo
 - Teléfono fijo, si alguna vez es distinto del WhatsApp ya publicado
 - URL pública del formulario de MailerLite y nombres de campo, si cambian

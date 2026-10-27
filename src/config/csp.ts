@@ -31,18 +31,51 @@ export function clasificarAccionFormulario(accion: string | undefined): AccionFo
   return { lista: true, action: url.toString(), origen: url.origin };
 }
 
-export function politicaCsp(opciones: { hashes: readonly string[]; accionFormulario?: string }) {
+export type ReporteCsp =
+  | { lista: true; url: string }
+  | { lista: false; motivo: 'sin-configuracion' | 'url-invalida' };
+
+/** Nombre del grupo en report-to y en Reporting-Endpoints. */
+export const grupoReporteCsp = 'csp-endpoint';
+
+export function clasificarReporteCsp(valor: string | undefined): ReporteCsp {
+  const texto = valor?.trim() ?? '';
+  if (!texto) return { lista: false, motivo: 'sin-configuracion' };
+
+  let url: URL;
+  try {
+    url = new URL(texto);
+  } catch {
+    return { lista: false, motivo: 'url-invalida' };
+  }
+
+  if (url.protocol !== 'https:' || url.username || url.password) {
+    return { lista: false, motivo: 'url-invalida' };
+  }
+  if (url.origin === 'null' || /[\s;"'\\]/.test(url.toString())) {
+    return { lista: false, motivo: 'url-invalida' };
+  }
+
+  return { lista: true, url: url.toString() };
+}
+
+export function politicaCsp(opciones: {
+  hashes: readonly string[];
+  accionFormulario?: string;
+  reporte?: string;
+}) {
   const accion = clasificarAccionFormulario(opciones.accionFormulario);
   const formAction = accion.lista ? `'self' ${accion.origen}` : `'self'`;
   const hashes = [...new Set(opciones.hashes)].sort();
   const scriptSrc = [
     "'self'",
+    "'strict-dynamic'",
     ...hashes.map((hash) => `'sha256-${hash}'`),
     'https://www.googletagmanager.com',
     'https://connect.facebook.net',
   ].join(' ');
 
-  return [
+  const directivas = [
     "default-src 'self'",
     `script-src ${scriptSrc}`,
     "style-src 'self'",
@@ -54,7 +87,26 @@ export function politicaCsp(opciones: { hashes: readonly string[]; accionFormula
     `form-action ${formAction}`,
     "frame-ancestors 'none'",
     "frame-src 'none'",
-  ].join('; ');
+  ];
+
+  if (opciones.reporte !== undefined) {
+    const reporte = clasificarReporteCsp(opciones.reporte);
+    if (!reporte.lista) {
+      throw new Error('CSP_REPORT_URL debe ser una URL https absoluta, sin usuario ni contraseña.');
+    }
+    directivas.push(`report-uri ${reporte.url}`);
+    directivas.push(`report-to ${grupoReporteCsp}`);
+  }
+
+  return directivas.join('; ');
+}
+
+export function encabezadoReportingEndpoints(url: string) {
+  const reporte = clasificarReporteCsp(url);
+  if (!reporte.lista) {
+    throw new Error('CSP_REPORT_URL debe ser una URL https absoluta, sin usuario ni contraseña.');
+  }
+  return `${grupoReporteCsp}="${reporte.url}"`;
 }
 
 export function directiva(csp: string, nombre: string) {
