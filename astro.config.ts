@@ -106,7 +106,6 @@ function encabezadosCloudflare(): AstroIntegration {
         }
         const csp = politicaCsp({
           hashes,
-          accionFormulario: process.env.PUBLIC_MAILERLITE_FORM_ACTION,
           reporte: reporte.lista ? reporte.url : undefined,
         });
 
@@ -199,26 +198,7 @@ export default defineConfig({
         access: 'public',
         optional: true,
       }),
-      PUBLIC_MAILERLITE_FORM_ACTION: envField.string({
-        context: 'server',
-        access: 'public',
-        optional: true,
-      }),
-      PUBLIC_MAILERLITE_EMAIL_FIELD: envField.string({
-        context: 'server',
-        access: 'public',
-        optional: true,
-      }),
-      PUBLIC_MAILERLITE_NAME_FIELD: envField.string({
-        context: 'server',
-        access: 'public',
-        optional: true,
-      }),
-      PUBLIC_MAILERLITE_CONSENT_FIELD: envField.string({
-        context: 'server',
-        access: 'public',
-        optional: true,
-      }),
+      BOLETIN_ACTIVO: envField.string({ context: 'server', access: 'public', optional: true }),
       PUBLIC_GA4_ID: envField.string({ context: 'server', access: 'public', optional: true }),
       PUBLIC_META_PIXEL_ID: envField.string({ context: 'server', access: 'public', optional: true }),
     },

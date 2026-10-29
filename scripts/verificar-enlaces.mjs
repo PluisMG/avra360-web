@@ -54,10 +54,12 @@ if (htmls.length === 0) anotar('No hay HTML en dist/. Ejecute npm run build.');
 
 const encabezados = await readFile(path.join(dist, '_headers'), 'utf8').catch(() => '');
 if (!encabezados.includes('Content-Security-Policy')) anotar('Falta _headers con Content-Security-Policy.');
+if (/mailerlite/i.test(encabezados)) anotar('La CSP todavía menciona a MailerLite.');
 if (!encabezados.includes('Strict-Transport-Security: max-age=31536000')) {
   anotar('Falta Strict-Transport-Security: max-age=31536000.');
 }
 const cspLinea = encabezados.match(/Content-Security-Policy:\s*(.+)/)?.[1] ?? '';
+if (directiva(cspLinea, 'form-action') !== "'self'") anotar("La CSP debe dejar form-action en 'self'.");
 const scriptSrc = encabezados ? directiva(cspLinea, 'script-src') : '';
 if (scriptSrc && !scriptSrc.includes("'strict-dynamic'")) anotar("La CSP no incluye 'strict-dynamic'.");
 const tieneReportTo = /\breport-to\b/.test(cspLinea);

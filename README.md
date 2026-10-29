@@ -55,12 +55,12 @@ Variables útiles en el panel, ninguna de ellas es secreta:
 - `SITE` — URL canónica https del dominio propio. **El lanzamiento la exige.** Hay que compilar con `SITE=https://el-dominio-real` y sin `PREVIEW`. Si no se define, el build usa `https://mktcreativa.example`, un marcador que no puede publicarse.
 - `PREVIEW` — `1` para un build de vista previa.
 - `PUBLIC_MOSTRAR_EDICION_EJEMPLO`
-- `PUBLIC_MAILERLITE_FORM_ACTION` y, si hace falta, los nombres de campo.
+- `BOLETIN_ACTIVO` — déjela sin definir. Solo `1` muestra el formulario del boletín listo para enviar. No es un secreto.
 - `PUBLIC_GA4_ID`
 - `PUBLIC_META_PIXEL_ID`
 - `CSP_REPORT_URL` — déjela sin definir. No hay recolector. Si más adelante existe una URL https del propio recolector, el build añade `report-uri`, `report-to` y `Reporting-Endpoints`. Sin esa variable, esos encabezados no se emiten. No invente un endpoint y no ponga un secreto: la URL queda publicada en la CSP.
 
-No cree una variable pública para la API key de MailerLite. El sitio no la usa y no debe estar en el cliente.
+No cree variables públicas para `RESEND_API_KEY`, `RESEND_AUDIENCE_ID`, `BOLETIN_FROM` ni `BOLETIN_SIGNING_SECRET`. Son secrets del Worker.
 
 ## Vista previa
 
@@ -122,20 +122,53 @@ La portada del boletín lista las ediciones por fecha, de la más nueva a la má
 
 Aunque se muestre, esa página lleva `noindex` y no entra al sitemap. Quítela del repositorio cuando ya no haga falta como muestra.
 
-## Suscripción a MailerLite
+## Suscripción con Resend
 
-El formulario del boletín (en `/boletin` y en el pie) está listo, pero la cuenta todavía no existe.
+MailerLite ya no se usa. El formulario, en `/boletin` y en el pie, hace `POST /api/boletin/suscribir` en el mismo sitio. La CSP deja `form-action 'self'` y no abre ningún dominio de correo.
 
-- Ponga en `PUBLIC_MAILERLITE_FORM_ACTION` la URL **pública** de acción del formulario embebido.
-- Si los campos no se llaman `fields[email]` y `fields[name]`, defina `PUBLIC_MAILERLITE_EMAIL_FIELD` y `PUBLIC_MAILERLITE_NAME_FIELD`.
-- Si el formulario de MailerLite tiene un campo para guardar el consentimiento, ponga su nombre en `PUBLIC_MAILERLITE_CONSENT_FIELD`. Si no, la casilla igual es obligatoria en el navegador y no se envía con un nombre inventado.
-- Sin una URL https válida, el formulario se muestra desactivado, con un mensaje claro, y el botón no envía nada.
-- Con URL válida, el build añade su origen (el host real, por ejemplo `https://assets.mailerlite.com`) a `form-action` de la CSP. Sin URL, `form-action` queda en `'self'`. El envío es un POST del formulario, así que no hace falta abrir `connect-src`.
-- Si la URL trae un parámetro `api_key`, `token`, `secret` o `password`, el formulario también se queda desactivado.
-- Aunque la URL sea válida, el formulario sigue desactivado mientras `avisoPublico` sea `false` en `src/config/publicacion.ts`. Hoy lo es: falta el aviso de privacidad. El estado desactivado no enlaza a esa página.
-- Hay un campo oculto, fuera de pantalla, con `tabindex="-1"`, `autocomplete="off"` y `aria-hidden` en su contenedor. Si viene lleno, el navegador no envía el formulario. Si viene vacío, no se incluye en el POST.
+Hoy el formulario se ve desactivado. El texto visible es genérico: falta el texto exacto de Creativo. No ponga ese pendiente en el HTML.
 
-Cuando el aviso pueda publicarse, el formulario activo usa la casilla de consentimiento y el enlace «Leer el aviso de privacidad».
+El Worker (`worker/index.ts`, configurado en `wrangler.jsonc`) atiende `/api/boletin/*` y deja el resto de las rutas a los archivos de `dist/`. No ejecute `wrangler deploy` desde este repositorio.
+
+### Cuándo se enciende
+
+Hacen falta las dos cosas. Aún no hay dominio verificado en Resend, así que no se configuran todavía.
+
+1. Compilar el sitio con `BOLETIN_ACTIVO=1`. Si no es exactamente `1`, el formulario queda deshabilitado.
+2. En el Worker, la variable `BOLETIN_ACTIVO` también en `1`, y estos secrets (sin valor en el repo, sin `.env` y sin `wrangler.jsonc`):
+
+```bash
+wrangler secret put RESEND_API_KEY
+wrangler secret put RESEND_AUDIENCE_ID
+wrangler secret put BOLETIN_FROM
+wrangler secret put BOLETIN_SIGNING_SECRET
+```
+
+`RESEND_AUDIENCE_ID` es el id del segmento de Resend (antes, audiencia). `BOLETIN_FROM` es el remitente, por ejemplo `Boletín <boletin@el-dominio>`. `BOLETIN_SIGNING_SECRET` firma los enlaces; use al menos 16 caracteres al azar. Si falta cualquiera, o si `BOLETIN_ACTIVO` no es `1`, `POST /api/boletin/suscribir` responde 503.
+
+### Doble opt-in y baja
+
+`POST /api/boletin/suscribir` valida el correo, exige la casilla de consentimiento y revisa el campo oculto `empresa_web`. Si ese campo viene lleno, responde 200 y no llama a Resend. Hay un límite simple de 5 solicitudes cada 10 minutos por IP, en memoria del isolate: no crea KV.
+
+Si todo es válido, firma con HMAC-SHA256 un token de confirmación que vence a las 48 horas y otro de baja que vence a los 400 días. Resend envía el correo con:
+
+- `GET /api/boletin/confirmar?token=...` — solo entonces crea o actualiza el contacto en el segmento, con `unsubscribed: false`.
+- `GET /api/boletin/baja?token=...` — también acepta POST. Marca `unsubscribed: true`.
+
+Cada envío del boletín debe incluir un enlace de baja nuevo, firmado igual (`uso: "baja"`, el mismo secret, vencimiento de unos 400 días). El correo de confirmación ya lo trae.
+
+### Consentimiento en el contacto
+
+Al confirmar, el contacto recibe estas propiedades de Resend, todas en texto:
+
+- `consentimiento_solicitado` y `consentimiento_confirmado` (fecha y hora ISO)
+- `consentimiento_version` (`boletin-2026-10-29`) y `consentimiento_texto`
+- `ip_hash` (SHA-256 de la IP, recortado; no se guarda la IP completa)
+- `origen` (ruta del sitio, por ejemplo `/boletin`)
+
+Hay que crear esas propiedades en Resend antes de activar el formulario. Este repositorio no las crea y no crea un namespace KV. Si Resend no aceptara propiedades, la alternativa sería un KV `CONSENTIMIENTOS` con la misma ficha por correo; no está aprovisionado.
+
+El campo oculto del formulario sigue fuera de pantalla, con `tabindex="-1"`, `autocomplete="off"` y `aria-hidden` en su contenedor.
 
 ## Precios
 
@@ -232,9 +265,10 @@ Estos datos no aparecen en el sitio. No hay marcadores en su lugar:
 - Hallazgos del diagnóstico de MentalCareClinic, fecha y dirección del sitio nuevo, y estado de su ficha de Google, si Pedro autoriza publicarlos
 - Condiciones del piloto y testimonio de la dirección, solo con autorización
 - Dominio real (`SITE`). El lanzamiento no puede salir con `https://mktcreativa.example` ni con `PREVIEW=1`
-- Texto de Creativo para `marketing-para-psicologos`, `diagnostico-digital`, `nosotros` y las guías que todavía no tienen archivo
+- Texto exacto de Creativo para el formulario del boletín cuando está apagado. Hoy se usa un mensaje genérico
+- Las guías del catálogo que todavía no tienen archivo
 - Teléfono fijo, si alguna vez es distinto del WhatsApp ya publicado
-- URL pública del formulario de MailerLite y nombres de campo, si cambian
+- Dominio verificado en Resend y los secrets del boletín (`RESEND_API_KEY`, `RESEND_AUDIENCE_ID`, `BOLETIN_FROM`, `BOLETIN_SIGNING_SECRET`) más `BOLETIN_ACTIVO=1`
 - Identificadores de GA4 y del píxel de Meta, si se van a usar
 - Precios aprobados
 - Revisión legal del aviso antes de tratarlo como vigente

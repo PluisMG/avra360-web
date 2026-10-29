@@ -4,6 +4,8 @@
  * razón social, domicilio y correos— no se publica aquí.
  */
 
+import { consentimientoBoletin, mensajeBoletinApagado } from './suscripcion.ts';
+
 export const seo = {
   inicio: {
     titulo: 'Agencia de marketing médico en Tuxtla Gutiérrez',
@@ -251,23 +253,15 @@ export const boletin = {
 export const formularioBoletinTextos = {
   titulo: 'Reciba el boletín',
   ayudaActiva:
-    'Déjenos su nombre y su correo. Le enviaremos cada edición por correo electrónico y puede darse de baja en cualquier momento.',
+    'Déjenos su nombre y su correo. Le enviaremos un mensaje para confirmar y, después, cada edición. Puede darse de baja en cualquier momento.',
   leyendaActiva: 'Datos para recibir el boletín',
   placeholderNombre: 'Su nombre',
   placeholderCorreo: 'nombre@suclinica.mx',
-  casilla: 'Acepto que MKT Creativa use mi nombre y mi correo solo para enviarme el boletín.',
+  casilla: consentimientoBoletin.texto,
   boton: 'Suscribirme',
-  exito: 'Gracias. Revise su correo para confirmar la suscripción.',
-  errorCampos: 'Revise que su nombre y su correo estén escritos correctamente.',
-  errorCasilla: 'Para enviarle el boletín necesitamos su consentimiento. Marque la casilla para continuar.',
-  ayudaApagada:
-    'La suscripción todavía no está disponible. Muy pronto podrá registrarse aquí; mientras tanto, puede escribirnos por WhatsApp.',
-  ayudaSecreto:
-    'La suscripción está desactivada: la URL configurada parece incluir un secreto. No se enviará nada. Use solo la URL pública del formulario, nunca la API key.',
-  ayudaInvalida:
-    'La suscripción está desactivada: la URL del formulario no es una dirección https válida. No se enviará nada.',
+  ayudaApagada: mensajeBoletinApagado,
   leyendaApagada: 'Suscripción no disponible',
-  botonApagado: 'Suscripción próximamente',
+  botonApagado: 'Suscripción no disponible',
 } as const;
 
 export const contacto = {

@@ -1,35 +1,7 @@
 /**
  * Política CSP que el build escribe en dist/_headers.
- * El formulario del boletín es un POST de navegación: el navegador lo autoriza
- * con form-action, no con connect-src. Sin URL, form-action queda en 'self'.
+ * El formulario del boletín hace POST a este mismo sitio, así que form-action es 'self'.
  */
-
-const claveSecreta = /api[_-]?key|token|secret|password/i;
-
-export type AccionFormulario =
-  | { lista: true; action: string; origen: string }
-  | { lista: false; motivo: 'sin-configuracion' | 'url-invalida' | 'parece-secreto' };
-
-export function clasificarAccionFormulario(accion: string | undefined): AccionFormulario {
-  const texto = accion?.trim() ?? '';
-  if (!texto) return { lista: false, motivo: 'sin-configuracion' };
-
-  let url: URL;
-  try {
-    url = new URL(texto);
-  } catch {
-    return { lista: false, motivo: 'url-invalida' };
-  }
-
-  if (url.protocol !== 'https:' || url.username || url.password) {
-    return { lista: false, motivo: 'url-invalida' };
-  }
-
-  const pareceSecreto = [...url.searchParams.keys()].some((clave) => claveSecreta.test(clave));
-  if (pareceSecreto) return { lista: false, motivo: 'parece-secreto' };
-
-  return { lista: true, action: url.toString(), origen: url.origin };
-}
 
 export type ReporteCsp =
   | { lista: true; url: string }
@@ -61,11 +33,8 @@ export function clasificarReporteCsp(valor: string | undefined): ReporteCsp {
 
 export function politicaCsp(opciones: {
   hashes: readonly string[];
-  accionFormulario?: string;
   reporte?: string;
 }) {
-  const accion = clasificarAccionFormulario(opciones.accionFormulario);
-  const formAction = accion.lista ? `'self' ${accion.origen}` : `'self'`;
   const hashes = [...new Set(opciones.hashes)].sort();
   const scriptSrc = [
     "'self'",
@@ -84,7 +53,7 @@ export function politicaCsp(opciones: {
     "font-src 'self'",
     "object-src 'none'",
     "base-uri 'self'",
-    `form-action ${formAction}`,
+    "form-action 'self'",
     "frame-ancestors 'none'",
     "frame-src 'none'",
   ];

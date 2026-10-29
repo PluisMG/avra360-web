@@ -67,7 +67,7 @@ export const bloquesAviso: BloqueAviso[] = [
     parrafos: [
       'El boletín pide consentimiento expreso mediante una casilla que no viene marcada. Sin esa casilla no hay suscripción. La persona puede negarse sin que eso impida llamar o escribir por WhatsApp.',
       'La analítica pide una decisión distinta: aceptar o rechazar. El rechazo no bloquea el sitio. Mientras no haya identificadores configurados, aceptar tampoco instala Google Analytics ni el píxel de Meta.',
-      'El consentimiento puede revocarse en cualquier momento, sin efectos retroactivos, como prevé el artículo 7 de la ley. El mecanismo previsto es un escrito al correo [Correo de contacto: pendiente]. Para el boletín, la baja también se podrá pedir por el enlace que incluya cada envío cuando MailerLite esté conectado.',
+      'El consentimiento puede revocarse en cualquier momento, sin efectos retroactivos, como prevé el artículo 7 de la ley. El mecanismo previsto es un escrito al correo [Correo de contacto: pendiente]. Para el boletín, la baja también se podrá pedir por el enlace que incluye el correo de confirmación y cada envío.',
     ],
   },
   {
@@ -96,7 +96,7 @@ export const bloquesAviso: BloqueAviso[] = [
     titulo: 'Transferencias y personas encargadas',
     parrafos: [
       'No se venden datos personales ni se ceden para publicidad de terceros.',
-      'MailerLite, cuando se contrate la cuenta, trataría nombre y correo por cuenta de la agencia para enviar el boletín: sería persona encargada, no una cesión para fines propios. Hoy la cuenta no existe y el formulario del sitio está desactivado, así que no hay envío. Al conectarlo se indicará aquí la relación y se le comunicará el aviso y las finalidades, como corresponde frente a quien trata datos por cuenta del responsable.',
+      'Resend, cuando se contrate la cuenta y el dominio de envío esté verificado, trataría nombre y correo por cuenta de la agencia para enviar el boletín: sería persona encargada, no una cesión para fines propios. Hoy no hay dominio verificado y el formulario del sitio está desactivado, así que no hay envío. Al conectarlo se indicará aquí la relación y se le comunicará el aviso y las finalidades, como corresponde frente a quien trata datos por cuenta del responsable.',
       'Al pulsar WhatsApp, la persona sale hacia el servicio de Meta con su propio aviso. Al llamar, usa la red de su operador. Esos actos los inicia la persona.',
       'El hospedaje del sitio todavía no está contratado. Cuando se elija, se nombrará aquí como persona encargada de la infraestructura: [PROVEEDOR DE HOSPEDAJE]. Un proveedor de hospedaje puede tratar registros técnicos de conexión, como la dirección IP, para operar y asegurar el servicio.',
       'No hay otras transferencias previstas. Si en el futuro se necesitara una transferencia que requiera consentimiento, se pedirá de forma expresa y se actualizará este aviso, conforme al artículo 35. El artículo 36 lista supuestos estrechos en los que una transferencia puede ocurrir sin consentimiento; no son el plan de este sitio.',
@@ -107,7 +107,7 @@ export const bloquesAviso: BloqueAviso[] = [
     titulo: 'Cookies y analítica',
     parrafos: [
       'El sitio se puede usar sin cookies de analítica. No hay cookies necesarias de sesión: es un sitio estático.',
-      'Google Analytics 4 y el píxel de Meta quedan preparados en la configuración y apagados. Solo se insertan sus scripts si existen identificadores públicos y la persona pulsa “Aceptar analítica”. Esos identificadores no son la API key de ningún servicio. La API key de MailerLite no se usa en el sitio y no debe colocarse en el código ni en variables públicas.',
+      'Google Analytics 4 y el píxel de Meta quedan preparados en la configuración y apagados. Solo se insertan sus scripts si existen identificadores públicos y la persona pulsa “Aceptar analítica”. Esos identificadores no son la API key de ningún servicio. La API key de Resend no se usa en el sitio y no debe colocarse en el código ni en variables públicas.',
       'Rechazar la analítica deja el sitio igual de usable. La decisión se recuerda en ese navegador hasta que la persona la cambie desde “Preferencias de cookies”.',
     ],
   },
@@ -115,7 +115,7 @@ export const bloquesAviso: BloqueAviso[] = [
     id: 'seguridad',
     titulo: 'Seguridad y vulneraciones',
     parrafos: [
-      'El artículo 18 pide medidas de seguridad administrativas, técnicas y físicas acordes al riesgo. En este sitio el riesgo previsto es el de una lista de nombres y correos, no el de un expediente clínico. Las medidas mínimas previstas son: no publicar bases de datos en el repositorio, no poner secretos en el código, limitar quién administra MailerLite cuando exista, y usar el sitio estático sin formularios propios que guarden datos en el servidor de la agencia.',
+      'El artículo 18 pide medidas de seguridad administrativas, técnicas y físicas acordes al riesgo. En este sitio el riesgo previsto es el de una lista de nombres y correos, no el de un expediente clínico. Las medidas mínimas previstas son: no publicar bases de datos en el repositorio, no poner secretos en el código, limitar quién administra Resend cuando exista, y no guardar la lista de suscriptores en el repositorio.',
       'Si una vulneración afectara de forma significativa los derechos patrimoniales o morales de las personas titulares, el artículo 19 prevé informarles de forma inmediata. El canal previsto para ese aviso es [Correo de contacto: pendiente] y, si hiciera falta un aviso más amplio, esta misma página.',
       'Quien intervenga en el tratamiento debe guardar confidencialidad, también después de terminar su relación con el responsable, conforme al artículo 20.',
     ],
