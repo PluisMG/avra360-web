@@ -24,7 +24,7 @@ export default {
       if (url.pathname.startsWith('/api/')) return conSeguridad(json({ status: 'no-encontrado' }, 404), env);
       const asset = await env.ASSETS.fetch(request);
       const html = await prepararHtml(asset, env);
-      return conSeguridad(html, env);
+      return cacheEstatico(conSeguridad(html, env), url.pathname);
     } catch (error) {
       console.log(JSON.stringify({ evento: 'error', nombre: error instanceof Error ? error.name : 'Error' }));
       return conSeguridad(json({ status: 'error' }, 500), env);
@@ -44,6 +44,18 @@ async function prepararHtml(respuesta: Response, env: Env): Promise<Response> {
     .replace('data-turnstile-site-key=""', `data-turnstile-site-key="${siteKey}"`)
     .replace('id="nota-config"', 'id="nota-config" hidden');
   return texto(respuesta, salida);
+}
+
+function cacheEstatico(respuesta: Response, pathname: string): Response {
+  const marcaOFavicon = pathname.startsWith('/brand/') || pathname === '/favicon.ico' || pathname === '/favicon.svg';
+  if (!marcaOFavicon) return respuesta;
+  const headers = new Headers(respuesta.headers);
+  headers.set('cache-control', 'public, max-age=604800');
+  return new Response(respuesta.body, {
+    status: respuesta.status,
+    statusText: respuesta.statusText,
+    headers,
+  });
 }
 
 function canonica(pathname: string): string | null {

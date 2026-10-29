@@ -94,8 +94,12 @@ function revisarPublicacion(): AstroIntegration {
           '/chat.js',
           '  Cache-Control: public, max-age=3600',
           '',
+          '/brand/*',
+          '  Cache-Control: public, max-age=604800',
+          '',
           '/favicon.ico',
           '  Content-Type: image/png',
+          '  Cache-Control: public, max-age=604800',
           '',
         ].join('\n');
         await writeFile(path.join(raiz, '_headers'), encabezados);

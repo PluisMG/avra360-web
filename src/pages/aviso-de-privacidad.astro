@@ -17,8 +17,7 @@ import Base from '../layouts/Base.astro';
     <h1>Aviso de privacidad</h1>
     <p>Borrador del {aviso.fechaVisible}. Versión {aviso.version}.</p>
     <p>
-      Este texto se preparó conforme a la
-      <a href={aviso.leyUrl} rel="noopener noreferrer">{aviso.ley}</a>
+      Este texto se preparó conforme a la&nbsp;<a href={aviso.leyUrl} rel="noopener noreferrer">{aviso.ley}</a>
     </p>
     {
       bloquesAviso.map((bloque) => (

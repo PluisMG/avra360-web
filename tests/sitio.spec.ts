@@ -51,6 +51,12 @@ for (const vista of vistas) {
         'content',
         'https://avra360-preview.mktcreativa.workers.dev/og.png',
       );
+      await expect(page.locator('#hilo')).toHaveAttribute('aria-label', 'Mensajes de la conversación');
+      await expect(page.locator('#mensajes')).not.toHaveAttribute('aria-label');
+      await expect(page.locator('#chat')).toHaveAttribute('aria-label', 'Escribir un mensaje');
+      const zona = await page.locator('footer a').boundingBox();
+      expect(zona?.width ?? 0).toBeGreaterThanOrEqual(24);
+      expect(zona?.height ?? 0).toBeGreaterThanOrEqual(24);
       expect(html.toLowerCase()).not.toContain('cookie');
       expect(errores).toEqual([]);
     });
@@ -150,6 +156,7 @@ for (const vista of vistas) {
       await sinViolaciones(page);
       await page.goto('/aviso-de-privacidad');
       await expect(page.locator('.banner')).toHaveText(BANNER);
+      await expect(page.locator('#contenido')).toContainText('conforme a la Ley Federal');
       await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', /noindex/);
       await expect(page.getByText('[Razón social pendiente]').first()).toBeVisible();
       await expect(page.getByText('[Domicilio pendiente]').first()).toBeVisible();

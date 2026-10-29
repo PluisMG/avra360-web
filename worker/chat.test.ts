@@ -216,6 +216,14 @@ describe('csp y formulario sin JavaScript', () => {
 });
 
 describe('activos y encabezados', () => {
+  it('guarda la marca y el favicon una semana', async () => {
+    for (const ruta of ['/brand/avra360-favicon.svg', '/favicon.ico']) {
+      const respuesta = await pedir(`https://avra360.example${ruta}`);
+      expect(respuesta.status).toBe(200);
+      expect(respuesta.headers.get('cache-control')).toBe('public, max-age=604800');
+    }
+  });
+
   it('sirve robots y encabezados de vista previa', async () => {
     const respuesta = await pedir('https://avra360.example/robots.txt');
     expect(await respuesta.text()).toContain('Disallow: /');
@@ -316,6 +324,7 @@ function exigirSeguridad(respuesta: Response) {
   expect(csp).toContain("connect-src 'self'");
   expect(csp).toContain('frame-src https://challenges.cloudflare.com');
   expect(csp).toContain('report-to csp');
+  expect(csp).toContain('report-uri /api/csp-report');
   expect(csp).not.toContain('strict-dynamic');
   expect(csp).not.toContain('sha256-');
   expect(csp).not.toContain('unsafe-inline');

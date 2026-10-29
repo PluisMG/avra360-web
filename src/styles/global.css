@@ -339,7 +339,14 @@ body.en-conversacion .sugerencias { display: none; }
 }
 
 .pie p { margin: 0; }
-.pie a { color: var(--acento); }
+.pie a {
+  color: var(--acento);
+  display: inline-block;
+  min-width: 24px;
+  min-height: 24px;
+  line-height: 24px;
+  padding-inline: 0.25rem;
+}
 
 .pagina {
   width: min(42rem, calc(100% - 2rem));

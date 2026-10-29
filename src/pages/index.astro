@@ -19,12 +19,12 @@ const lede =
         <p class="cierre">Imagina. Nosotros lo hacemos posible.</p>
       </section>
       <div id="hilo" class="hilo" tabindex="0" role="region" aria-label="Mensajes de la conversación" hidden>
-        <div id="mensajes" role="log" aria-live="polite" aria-relevant="additions" aria-label="Conversación"></div>
+        <div id="mensajes" role="log" aria-live="polite" aria-relevant="additions"></div>
       </div>
     </main>
     <div class="dock">
       <div class="dock-inner">
-        <form id="chat" method="post" action="/api/chat" data-chat data-chat-activo="0" data-turnstile-site-key="" aria-label="Conversación">
+        <form id="chat" method="post" action="/api/chat" data-chat data-chat-activo="0" data-turnstile-site-key="" aria-label="Escribir un mensaje">
           <label class="sr" for="mensaje">Mensaje</label>
           <div class="caja">
             <textarea id="mensaje" name="mensaje" rows="1" maxlength="2000" placeholder="¿Qué te gustaría crear hoy?"></textarea>
@@ -50,7 +50,7 @@ const lede =
     </div>
   </div>
   <noscript>
-    <p class="nota">Para conversar, active JavaScript en este navegador.</p>
+    <p class="nota">Para conversar, activa JavaScript en este navegador.</p>
   </noscript>
   <script type="module" src="/chat.js"></script>
 </Base>
