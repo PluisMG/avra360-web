@@ -253,8 +253,27 @@ body.en-conversacion .dock-inner {
 }
 
 .caja:focus-within {
-  border-color: var(--acento);
-  box-shadow: 0 0 0 3px rgba(49, 51, 252, 0.25);
+  border-color: #3133fc;
+  outline: 2px solid #3133fc;
+  outline-offset: 2px;
+}
+
+/* Un solo anillo: el de la caja. El del campo se quita mientras ese anillo está visible. */
+.caja:focus-within textarea:focus-visible {
+  outline: none;
+}
+
+@media (forced-colors: active) {
+  .caja:focus-within {
+    border-color: CanvasText;
+    outline: 2px solid CanvasText;
+    outline-offset: 2px;
+    box-shadow: none;
+  }
+
+  .caja:focus-within textarea:focus-visible {
+    outline: none;
+  }
 }
 
 textarea {
@@ -295,6 +314,8 @@ textarea::placeholder { color: var(--secundario); }
   gap: 0.5rem;
   margin-top: 0.85rem;
 }
+
+body.en-conversacion .sugerencias { display: none; }
 
 .nota { margin: 0.85rem 0 0; font-size: 0.92rem; }
 

@@ -110,6 +110,29 @@ for (const vista of vistas) {
       await expect(page.locator('body')).toHaveClass(/en-conversacion/);
     });
 
+    test('la caja tiene un solo anillo de foco', async ({ page }) => {
+      await page.goto('/');
+      await page.locator('#mensaje').click();
+      await expect(page.locator('#mensaje')).toBeFocused();
+      await anilloUnico(page, false);
+      await sinViolaciones(page);
+    });
+
+    test('las sugerencias se ocultan en la conversación y vuelven al inicio', async ({ page }) => {
+      await page.goto('/');
+      await expect(page.locator('.sugerencias')).toBeVisible();
+      for (const texto of SUGERENCIAS) {
+        await expect(page.getByRole('button', { name: texto, exact: true })).toBeVisible();
+      }
+      await page.getByRole('button', { name: 'Solicitar presupuesto' }).click();
+      await expect(page.locator('body')).toHaveClass(/en-conversacion/);
+      await expect(page.locator('.sugerencias')).toBeHidden();
+      await page.locator('.logo').click();
+      await expect(page).toHaveURL(/\/$/);
+      await expect(page.locator('.sugerencias')).toBeVisible();
+      await expect(page.getByRole('button', { name: 'Crear mi marca' })).toBeVisible();
+    });
+
     test('axe no reporta violaciones en inicio, conversación, aviso y 404', async ({ page }) => {
       vigilar(page);
       await page.goto('/');
@@ -132,6 +155,14 @@ for (const vista of vistas) {
     });
   });
 }
+
+test('en colores forzados el anillo de la caja sigue visible', async ({ page }) => {
+  await page.emulateMedia({ forcedColors: 'active' });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+  await page.locator('#mensaje').click();
+  await anilloUnico(page, true);
+});
 
 test('con el chat apagado no se carga Turnstile', async ({ page }) => {
   const pedidos: string[] = [];
@@ -182,6 +213,7 @@ test('capturas de test del inicio y de la conversación', async ({ page }) => {
   await capturar(page, 1440, 900, 'escritorio-1440-conversacion-test', true);
   await capturar(page, 390, 844, 'movil-390-inicio', false);
   await capturar(page, 390, 844, 'movil-390-conversacion-test', true);
+  await capturar(page, 390, 844, 'movil-390-foco-test', false, true);
 });
 
 function vigilar(page: Page) {
@@ -207,7 +239,30 @@ async function sinViolaciones(page: Page) {
   expect(violaciones).toEqual([]);
 }
 
-async function capturar(page: Page, width: number, height: number, nombre: string, conversacion: boolean) {
+async function anilloUnico(page: Page, forzados: boolean) {
+  const campo = await page.locator('#mensaje').evaluate((elemento) => {
+    const estilo = getComputedStyle(elemento);
+    return { outlineStyle: estilo.outlineStyle, outlineWidth: Number.parseFloat(estilo.outlineWidth) };
+  });
+  const caja = await page.locator('.caja').evaluate((elemento) => {
+    const estilo = getComputedStyle(elemento);
+    return {
+      borderTopColor: estilo.borderTopColor,
+      outlineStyle: estilo.outlineStyle,
+      outlineWidth: Number.parseFloat(estilo.outlineWidth),
+      outlineColor: estilo.outlineColor,
+    };
+  });
+  expect(campo.outlineStyle === 'none' || campo.outlineWidth === 0).toBe(true);
+  expect(caja.outlineStyle).not.toBe('none');
+  expect(caja.outlineWidth).toBeGreaterThanOrEqual(2);
+  if (!forzados) {
+    expect(caja.borderTopColor).toBe('rgb(49, 51, 252)');
+    expect(caja.outlineColor).toBe('rgb(49, 51, 252)');
+  }
+}
+
+async function capturar(page: Page, width: number, height: number, nombre: string, conversacion: boolean, foco = false) {
   await page.setViewportSize({ width, height });
   await page.goto('/');
   if (conversacion) {
@@ -222,5 +277,6 @@ async function capturar(page: Page, width: number, height: number, nombre: strin
     barra.style.cssText = 'margin:0;padding:8px 16px;background:#171717;color:#fff;font:14px/1.4 sans-serif;text-align:center';
     document.body.prepend(barra);
   }, ETIQUETA);
+  if (foco) await page.locator('#mensaje').click();
   await page.screenshot({ path: `/opt/cursor/artifacts/${nombre}.png` });
 }
