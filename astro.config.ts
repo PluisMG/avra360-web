@@ -1,11 +1,9 @@
-import { createHash } from 'node:crypto';
 import { readdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { AstroIntegration } from 'astro';
 import { defineConfig } from 'astro/config';
-import { codigoArranque } from './src/cliente/arranque';
-import { politicaCsp } from './src/config/csp';
+import { ENCABEZADO_INFORMES, politicaCsp } from './src/config/csp';
 
 const sitio = resolverSitio(process.env.SITE ?? 'https://avra360.example');
 
@@ -65,12 +63,10 @@ function revisarPublicacion(): AstroIntegration {
           const scripts = [...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)];
           for (const script of scripts) {
             const atributos = script[1] ?? '';
-            const cuerpo = script[2] ?? '';
-            if (/\bsrc=/.test(atributos)) {
-              throw new Error(`Hay un script externo inesperado en ${archivo}.`);
-            }
-            if (cuerpo !== codigoArranque) {
-              throw new Error(`El script en línea de ${archivo} no coincide con el arranque del chat.`);
+            const cuerpo = (script[2] ?? '').trim();
+            if (cuerpo) throw new Error(`Hay un script en línea en ${archivo}.`);
+            if (!/\bsrc="\/chat\.js"/.test(atributos) || !/\btype="module"/.test(atributos)) {
+              throw new Error(`El único script permitido es el módulo /chat.js. Revisar ${archivo}.`);
             }
           }
         }
@@ -80,8 +76,7 @@ function revisarPublicacion(): AstroIntegration {
         }
         if (!css.includes('.woff2')) throw new Error('No se publicó el woff2 de Inter.');
         if (css.includes('fonts.googleapis.com')) throw new Error('El CSS publicado pide Google Fonts.');
-        const hash = createHash('sha256').update(codigoArranque).digest('base64');
-        const csp = politicaCsp(hash);
+        const csp = politicaCsp();
         const robots = process.env.PREVIEW === '1' ? '\n  X-Robots-Tag: noindex, nofollow' : '';
         const encabezados = [
           '/*',
@@ -90,7 +85,8 @@ function revisarPublicacion(): AstroIntegration {
           '  X-Frame-Options: DENY',
           '  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()',
           '  Strict-Transport-Security: max-age=31536000',
-          `  Content-Security-Policy: ${csp}${robots}`,
+          `  Content-Security-Policy: ${csp}`,
+          `  Reporting-Endpoints: ${ENCABEZADO_INFORMES}${robots}`,
           '',
           '/_astro/*',
           '  Cache-Control: public, max-age=31536000, immutable',

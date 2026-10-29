@@ -42,6 +42,14 @@ export function iniciarChat(): void {
     void enviarTexto(area.value);
   });
 
+  const botonEnviar = formulario.querySelector<HTMLButtonElement>('.enviar');
+  if (botonEnviar) {
+    botonEnviar.disabled = false;
+    botonEnviar.addEventListener('click', () => {
+      void enviarTexto(area.value);
+    });
+  }
+
   formulario.addEventListener('submit', (evento) => {
     evento.preventDefault();
     void enviarTexto(area.value);
@@ -148,7 +156,6 @@ export function iniciarChat(): void {
   function mostrarConfiguracion(): void {
     const nota = document.querySelector<HTMLElement>('#nota-config');
     if (nota) nota.hidden = true;
-    if (lista.querySelector('[data-config]')) return;
     const p = document.createElement('p');
     p.className = 'mensaje mensaje-sistema';
     p.dataset.config = '1';
@@ -309,3 +316,5 @@ function guardarConversacion(id: string): void {
     /* el aviso explica que el identificador vive en el navegador; si está bloqueado, el hilo sigue en esta visita */
   }
 }
+
+iniciarChat();

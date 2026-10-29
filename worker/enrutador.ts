@@ -13,6 +13,7 @@ export async function enrutar(request: Request, env: Env): Promise<Response | nu
   const url = new URL(request.url);
   if (url.pathname === '/robots.txt') return null;
   if (!url.pathname.startsWith('/api/')) return null;
+  if (request.method === 'POST' && url.pathname === '/api/csp-report') return postInformeCsp(request, env);
   if (request.method === 'POST' && url.pathname === '/api/chat') return postChat(request, env);
   if (request.method === 'POST' && url.pathname === '/api/chat/reply') return postReply(request, env);
   const eventos = url.pathname.match(/^\/api\/chat\/([0-9a-f-]{36})\/events$/i);
@@ -21,7 +22,20 @@ export async function enrutar(request: Request, env: Env): Promise<Response | nu
   return null;
 }
 
+async function postInformeCsp(request: Request, env: Env): Promise<Response> {
+  const buffer = await request.arrayBuffer();
+  if (buffer.byteLength > 8_000) return new Response(null, { status: 413 });
+  const hash = await hashIp(`csp:${ipDe(request)}`);
+  const limite = await env.RATE_LIMITER.get(env.RATE_LIMITER.idFromName(hash)).consumir();
+  if (limite !== 'ok') return new Response(null, { status: 429 });
+  const cuerpo = new TextDecoder().decode(buffer).slice(0, 2_000);
+  console.log(JSON.stringify({ evento: 'csp', bytes: buffer.byteLength, cuerpo }));
+  return new Response(null, { status: 204 });
+}
+
 async function postChat(request: Request, env: Env): Promise<Response> {
+  const tipo = request.headers.get('content-type') ?? '';
+  if (!tipo.includes('application/json')) return respuestaFormulario(request, env);
   if (!chatListo(env)) return json({ status: 'configurando' }, 503);
   const lectura = await leerJson(request);
   if (!lectura.ok) return json({ status: lectura.motivo === 'largo' ? 'largo' : 'invalido' }, lectura.motivo === 'largo' ? 413 : 400);
@@ -98,6 +112,32 @@ async function getEventos(conversationId: string, env: Env): Promise<Response> {
     conversationId,
     status: ultimo?.role === 'user' ? 'pending' : 'listo',
     messages: estado.messages,
+  });
+}
+
+async function respuestaFormulario(request: Request, env: Env): Promise<Response> {
+  let mensaje = '';
+  try {
+    const datos = await request.formData();
+    const campo = datos.get('mensaje');
+    if (typeof campo === 'string') mensaje = campo.slice(0, 2_000);
+  } catch {
+    mensaje = '';
+  }
+  const aviso = chatListo(env)
+    ? 'Para conversar hace falta JavaScript en este navegador. Tu texto no se envió.'
+    : 'El chat con AVRA está en configuración. Muy pronto podrás conversar aquí.';
+  const html = `<!doctype html><html lang="es"><meta charset="utf-8"><meta name="robots" content="noindex"><title>AVRA 360</title><p>${escapar(aviso)}</p>${mensaje ? `<p>${escapar(mensaje)}</p>` : ''}<p><a href="/">Volver al inicio</a></p>`;
+  return new Response(html, {
+    status: 200,
+    headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' },
+  });
+}
+
+function escapar(valor: string): string {
+  return valor.replace(/[&<>"']/g, (caracter) => {
+    const mapa: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+    return mapa[caracter] ?? caracter;
   });
 }
 

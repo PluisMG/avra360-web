@@ -11,6 +11,6 @@
     "skipLibCheck": true,
     "verbatimModuleSyntax": false
   },
-  "include": ["./**/*.ts", "../worker-configuration.d.ts", "../src/cliente/arranque.ts", "../src/config/csp.ts"],
+  "include": ["./**/*.ts", "../worker-configuration.d.ts", "../src/config/csp.ts"],
   "exclude": ["./**/*.test.ts"]
 }

@@ -185,6 +185,36 @@ describe('chat activo', () => {
   });
 });
 
+describe('csp y formulario sin JavaScript', () => {
+  it('acepta un informe y lo limita por IP', async () => {
+    const ip = ipNueva();
+    for (let i = 0; i < 10; i += 1) {
+      const respuesta = await informeCsp(ip, '{"csp-report":{"violated-directive":"script-src"}}');
+      expect(respuesta.status).toBe(204);
+    }
+    expect((await informeCsp(ip, '{}')).status).toBe(429);
+  });
+
+  it('devuelve el texto del formulario sin ejecutarlo como HTML', async () => {
+    const ctx = createExecutionContext();
+    const respuesta = await worker.fetch(
+      new IncomingRequest('https://avra360.example/api/chat', {
+        method: 'POST',
+        headers: { 'content-type': 'application/x-www-form-urlencoded', 'cf-connecting-ip': ipNueva() },
+        body: 'mensaje=' + encodeURIComponent('Hola <script>alert(1)</script>'),
+      }),
+      { ...env, CHAT_ACTIVO: '0' },
+      ctx,
+    );
+    await waitOnExecutionContext(ctx);
+    expect(respuesta.status).toBe(200);
+    const html = await respuesta.text();
+    expect(html).toContain('El chat con AVRA está en configuración. Muy pronto podrás conversar aquí.');
+    expect(html).toContain('Hola &lt;script&gt;alert(1)&lt;/script&gt;');
+    expect(html).not.toContain('<script>');
+  });
+});
+
 describe('activos y encabezados', () => {
   it('sirve robots y encabezados de vista previa', async () => {
     const respuesta = await pedir('https://avra360.example/robots.txt');
@@ -254,6 +284,21 @@ async function getEventos(conversationId: string) {
   return pedir(`https://avra360.example/api/chat/${conversationId}/events`);
 }
 
+async function informeCsp(ip: string, cuerpo: string) {
+  const ctx = createExecutionContext();
+  const respuesta = await worker.fetch(
+    new IncomingRequest('https://avra360.example/api/csp-report', {
+      method: 'POST',
+      headers: { 'content-type': 'application/csp-report', 'cf-connecting-ip': ip },
+      body: cuerpo,
+    }),
+    env,
+    ctx,
+  );
+  await waitOnExecutionContext(ctx);
+  return respuesta;
+}
+
 async function pedir(url: string) {
   const ctx = createExecutionContext();
   const respuesta = await worker.fetch(new IncomingRequest(url), env, ctx);
@@ -267,12 +312,14 @@ function exigirSeguridad(respuesta: Response) {
   expect(respuesta.headers.get('x-frame-options')).toBe('DENY');
   expect(respuesta.headers.get('referrer-policy')).toBe('strict-origin-when-cross-origin');
   const csp = respuesta.headers.get('content-security-policy') ?? '';
+  expect(csp).toContain("script-src 'self' https://challenges.cloudflare.com");
   expect(csp).toContain("connect-src 'self'");
-  expect(csp).toContain('https://challenges.cloudflare.com');
   expect(csp).toContain('frame-src https://challenges.cloudflare.com');
-  expect(csp).toContain("'strict-dynamic'");
-  expect(csp).toContain('sha256-');
+  expect(csp).toContain('report-to csp');
+  expect(csp).not.toContain('strict-dynamic');
+  expect(csp).not.toContain('sha256-');
   expect(csp).not.toContain('unsafe-inline');
   expect(csp).not.toContain('unsafe-eval');
+  expect(respuesta.headers.get('reporting-endpoints')).toContain('/api/csp-report');
   expect(respuesta.headers.get('x-robots-tag')).toBe('noindex, nofollow');
 }

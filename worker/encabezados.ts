@@ -1,27 +1,14 @@
-import { codigoArranque } from '../src/cliente/arranque.ts';
-import { politicaCsp } from '../src/config/csp.ts';
+import { ENCABEZADO_INFORMES, politicaCsp } from '../src/config/csp.ts';
 
-let politica: Promise<string> | undefined;
-
-async function csp(): Promise<string> {
-  politica ??= (async () => {
-    const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(codigoArranque));
-    const bytes = new Uint8Array(digest);
-    let binario = '';
-    for (const byte of bytes) binario += String.fromCharCode(byte);
-    return politicaCsp(btoa(binario));
-  })();
-  return politica;
-}
-
-export async function conSeguridad(respuesta: Response, env: Env): Promise<Response> {
+export function conSeguridad(respuesta: Response, env: Env): Response {
   const headers = new Headers(respuesta.headers);
   headers.set('x-content-type-options', 'nosniff');
   headers.set('referrer-policy', 'strict-origin-when-cross-origin');
   headers.set('x-frame-options', 'DENY');
   headers.set('permissions-policy', 'camera=(), microphone=(), geolocation=(), payment=()');
   headers.set('strict-transport-security', 'max-age=31536000');
-  headers.set('content-security-policy', await csp());
+  headers.set('content-security-policy', politicaCsp());
+  headers.set('reporting-endpoints', ENCABEZADO_INFORMES);
   if (env.PREVIEW === '1') headers.set('x-robots-tag', 'noindex, nofollow');
   return new Response(respuesta.body, {
     status: respuesta.status,

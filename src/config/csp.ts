@@ -1,7 +1,7 @@
-export function politicaCsp(hashBase64: string): string {
+export function politicaCsp(): string {
   return [
     "default-src 'none'",
-    `script-src 'self' 'strict-dynamic' 'sha256-${hashBase64}' https://challenges.cloudflare.com`,
+    "script-src 'self' https://challenges.cloudflare.com",
     "style-src 'self'",
     "img-src 'self'",
     "font-src 'self'",
@@ -12,5 +12,9 @@ export function politicaCsp(hashBase64: string): string {
     "object-src 'none'",
     "frame-ancestors 'none'",
     'upgrade-insecure-requests',
+    'report-to csp',
+    'report-uri /api/csp-report',
   ].join('; ');
 }
+
+export const ENCABEZADO_INFORMES = 'csp="/api/csp-report"';

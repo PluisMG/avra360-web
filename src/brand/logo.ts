@@ -19,3 +19,5 @@ export const marca = {
   },
   og: '/og.png',
 } as const;
+
+export const origenVistaPrevia = 'https://avra360-preview.mktcreativa.workers.dev';

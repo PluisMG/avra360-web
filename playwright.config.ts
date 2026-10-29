@@ -16,9 +16,10 @@ export default defineConfig({
     },
   },
   webServer: {
-    command: 'npm run preview -- --port 4321',
+    command:
+      'PREVIEW=1 npm run build && npx wrangler dev --ip 127.0.0.1 --port 4321 --local-protocol http --show-interactive-dev-session false --log-level error',
     url: 'http://127.0.0.1:4321',
-    reuseExistingServer: true,
+    reuseExistingServer: false,
     timeout: 120_000,
   },
 });

@@ -47,6 +47,10 @@ for (const vista of vistas) {
       await expect(page.locator('link[rel="apple-touch-icon"]')).toHaveAttribute('href', '/brand/avra360-favicon-180.png');
       const html = await page.content();
       expect(html).not.toContain('fonts.googleapis');
+      await expect(page.locator('meta[property="og:image"]')).toHaveAttribute(
+        'content',
+        'https://avra360-preview.mktcreativa.workers.dev/og.png',
+      );
       expect(html.toLowerCase()).not.toContain('cookie');
       expect(errores).toEqual([]);
     });
@@ -77,6 +81,10 @@ for (const vista of vistas) {
         await page.getByRole('button', { name: texto, exact: true }).click();
         await expect(page.locator('.mensaje-user')).toHaveText(texto);
         await expect(page.locator('body')).toHaveClass(/en-conversacion/);
+        await expect(page.locator('.sugerencias')).toBeHidden();
+        await expect(page.locator('#hilo')).toHaveAttribute('tabindex', '0');
+        await page.locator('#hilo').focus();
+        await expect(page.locator('#hilo')).toBeFocused();
         const hero = await page.locator('#hero').boundingBox();
         expect((hero?.width ?? 0) <= 1 && (hero?.height ?? 0) <= 1).toBe(true);
         await expect(page.locator('.dock')).toHaveCSS('position', 'fixed');
@@ -156,6 +164,77 @@ for (const vista of vistas) {
   });
 }
 
+test('Enter, el botón y las sugerencias no violan la CSP', async ({ page }) => {
+  const errores: string[] = [];
+  const violaciones: string[] = [];
+  page.on('console', (mensaje) => {
+    if (mensaje.type() === 'error') errores.push(mensaje.text());
+  });
+  page.on('pageerror', (error) => errores.push(error.message));
+  await page.exposeBinding('__anotarCsp', (_origen, detalle: string) => {
+    violaciones.push(detalle);
+  });
+  await page.addInitScript(() => {
+    document.addEventListener('securitypolicyviolation', (evento) => {
+      const anotar = (window as unknown as { __anotarCsp?: (detalle: string) => void }).__anotarCsp;
+      anotar?.(`${evento.violatedDirective} ${evento.blockedURI}`);
+    });
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+  const csp = (await page.request.get('/')).headers()['content-security-policy'] ?? '';
+  expect(csp).toContain("script-src 'self' https://challenges.cloudflare.com");
+  expect(csp).not.toContain('strict-dynamic');
+  expect(csp).not.toContain('sha256-');
+  await expect(page.getByRole('button', { name: 'Enviar' })).toBeEnabled();
+
+  await page.locator('#mensaje').fill('Por teclado');
+  await page.locator('#mensaje').press('Enter');
+  await expect(page.locator('.mensaje-user').nth(0)).toHaveText('Por teclado');
+  await expect(page.locator('[data-config]').nth(0)).toHaveText(CONFIG);
+
+  await page.locator('#mensaje').fill('Por botón');
+  await page.getByRole('button', { name: 'Enviar' }).click();
+  await expect(page.locator('.mensaje-user')).toHaveCount(2);
+  await expect(page.locator('[data-config]')).toHaveCount(2);
+  await expect(page.locator('[data-config]').nth(1)).toHaveText(CONFIG);
+
+  for (const texto of SUGERENCIAS) {
+    await page.goto('/');
+    await page.getByRole('button', { name: texto, exact: true }).click();
+    await expect(page.locator('.mensaje-user')).toHaveText(texto);
+    await expect(page.locator('[data-config]')).toHaveText(CONFIG);
+  }
+
+  expect(violaciones).toEqual([]);
+  expect(errores).toEqual([]);
+});
+
+test('la CSP permite el script de Turnstile', async ({ page }) => {
+  const violaciones: string[] = [];
+  await page.exposeBinding('__anotarCsp', (_origen, detalle: string) => {
+    violaciones.push(detalle);
+  });
+  await page.addInitScript(() => {
+    document.addEventListener('securitypolicyviolation', (evento) => {
+      const anotar = (window as unknown as { __anotarCsp?: (detalle: string) => void }).__anotarCsp;
+      anotar?.(`${evento.violatedDirective} ${evento.blockedURI}`);
+    });
+  });
+  await page.goto('/');
+  const llegada = page.waitForResponse((respuesta) => respuesta.url().includes('challenges.cloudflare.com/turnstile'), {
+    timeout: 15_000,
+  });
+  await page.evaluate(() => {
+    const script = document.createElement('script');
+    script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+    document.head.append(script);
+  });
+  const respuesta = await llegada;
+  expect(respuesta.status()).toBeLessThan(400);
+  expect(violaciones.filter((detalle) => detalle.startsWith('script-src'))).toEqual([]);
+});
+
 test('en colores forzados el anillo de la caja sigue visible', async ({ page }) => {
   await page.emulateMedia({ forcedColors: 'active' });
   await page.setViewportSize({ width: 390, height: 844 });
@@ -226,7 +305,14 @@ function vigilar(page: Page) {
 }
 
 async function sinViolaciones(page: Page) {
-  await page.addScriptTag({ content: readFileSync('node_modules/axe-core/axe.min.js', 'utf8') });
+  await page.route('**/__axe.js', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'text/javascript; charset=utf-8',
+      body: readFileSync('node_modules/axe-core/axe.min.js', 'utf8'),
+    });
+  });
+  await page.addScriptTag({ url: '/__axe.js' });
   const violaciones = await page.evaluate(async () => {
     const axe = (window as unknown as { axe: { run: (nodo: Document) => Promise<{ violations: { id: string; help: string; nodes: { target: unknown[] }[] }[] }> } }).axe;
     const resultado = await axe.run(document);
