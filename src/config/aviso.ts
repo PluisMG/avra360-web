@@ -22,7 +22,7 @@ export const bloquesAviso: BloqueAviso[] = [
     id: 'borrador',
     titulo: 'Naturaleza de este documento',
     parrafos: [
-      'Este aviso es un borrador para revisión legal. No está vigente como aviso definitivo mientras sigan los marcadores [RAZÓN SOCIAL], [DOMICILIO] y [CORREO DE PRIVACIDAD], y mientras una persona licenciada en derecho no lo revise.',
+      'Este aviso es un borrador para revisión legal. No está vigente como aviso definitivo mientras sigan los marcadores [Responsable: pendiente], [Domicilio: pendiente] y [Correo de contacto: pendiente], y mientras una persona licenciada en derecho no lo revise.',
       `Describe el tratamiento previsto en el sitio de ${agencia.nombre} para datos de contacto y para quienes se suscriban al boletín. No cubre expedientes clínicos. La agencia no presta servicios de salud.`,
     ],
   },
@@ -30,9 +30,9 @@ export const bloquesAviso: BloqueAviso[] = [
     id: 'responsable',
     titulo: 'Responsable del tratamiento',
     parrafos: [
-      `Identidad: [RAZÓN SOCIAL], con nombre comercial ${agencia.nombre}. La persona de contacto público es ${agencia.responsable}.`,
-      `Domicilio para oír y recibir notificaciones: [DOMICILIO]. La agencia opera en ${agencia.ciudad}, ${agencia.estado}, ${agencia.pais}. Esa ciudad no sustituye el domicilio legal, que sigue pendiente.`,
-      'Correo para privacidad y para derechos ARCO: [CORREO DE PRIVACIDAD]. Hasta que ese correo exista y se publique sin corchetes, las solicitudes de privacidad no tienen un buzón definitivo. El WhatsApp de la agencia sirve para conversaciones comerciales, no como canal formal de derechos ARCO.',
+      `Identidad: [Responsable: pendiente], con nombre comercial ${agencia.nombre}. La persona de contacto público es ${agencia.responsable}.`,
+      `Domicilio para oír y recibir notificaciones: [Domicilio: pendiente]. La agencia opera en ${agencia.ciudad}, ${agencia.estado}, ${agencia.pais}. Esa ciudad no sustituye el domicilio legal, que sigue pendiente.`,
+      'Correo para privacidad y para derechos ARCO: [Correo de contacto: pendiente]. Hasta que ese correo exista y se publique sin corchetes, las solicitudes de privacidad no tienen un buzón definitivo. El WhatsApp de la agencia sirve para conversaciones comerciales, no como canal formal de derechos ARCO.',
     ],
   },
   {
@@ -67,7 +67,7 @@ export const bloquesAviso: BloqueAviso[] = [
     parrafos: [
       'El boletín pide consentimiento expreso mediante una casilla que no viene marcada. Sin esa casilla no hay suscripción. La persona puede negarse sin que eso impida llamar o escribir por WhatsApp.',
       'La analítica pide una decisión distinta: aceptar o rechazar. El rechazo no bloquea el sitio. Mientras no haya identificadores configurados, aceptar tampoco instala Google Analytics ni el píxel de Meta.',
-      'El consentimiento puede revocarse en cualquier momento, sin efectos retroactivos, como prevé el artículo 7 de la ley. El mecanismo previsto es un escrito al correo [CORREO DE PRIVACIDAD]. Para el boletín, la baja también se podrá pedir por el enlace que incluya cada envío cuando MailerLite esté conectado.',
+      'El consentimiento puede revocarse en cualquier momento, sin efectos retroactivos, como prevé el artículo 7 de la ley. El mecanismo previsto es un escrito al correo [Correo de contacto: pendiente]. Para el boletín, la baja también se podrá pedir por el enlace que incluya cada envío cuando MailerLite esté conectado.',
     ],
   },
   {
@@ -77,7 +77,7 @@ export const bloquesAviso: BloqueAviso[] = [
       'No marcar la casilla del boletín.',
       'Elegir “Rechazar” en las cookies de analítica, o volver a abrir “Preferencias de cookies” en el pie y cambiar la decisión.',
       'No enviar datos clínicos ni de terceros.',
-      'Pedir la limitación o la baja en [CORREO DE PRIVACIDAD] cuando ese correo esté activo.',
+      'Pedir la limitación o la baja en [Correo de contacto: pendiente] cuando ese correo esté activo.',
       'Dejar de escribir por WhatsApp. La conversación que ya esté en esa aplicación se rige también por el aviso de su proveedor.',
     ],
   },
@@ -86,7 +86,7 @@ export const bloquesAviso: BloqueAviso[] = [
     titulo: 'Derechos ARCO y revocación',
     parrafos: [
       'La persona titular, o su representante, puede pedir acceso, rectificación, cancelación u oposición respecto de los datos que estén en posesión del responsable. El ejercicio de un derecho no impide ejercer otro, conforme al artículo 21.',
-      'La solicitud se envía a [CORREO DE PRIVACIDAD] e incluye: nombre de la persona titular, una forma de acreditar su identidad (y la representación, si aplica), la descripción clara del derecho que quiere ejercer y los datos para recibir la respuesta. En una rectificación conviene indicar el dato correcto y, si hace falta, un documento de apoyo. El medio para entregar el acceso será una copia electrónica, salvo que la persona pida otro medio razonable.',
+      'La solicitud se envía a [Correo de contacto: pendiente] e incluye: nombre de la persona titular, una forma de acreditar su identidad (y la representación, si aplica), la descripción clara del derecho que quiere ejercer y los datos para recibir la respuesta. En una rectificación conviene indicar el dato correcto y, si hace falta, un documento de apoyo. El medio para entregar el acceso será una copia electrónica, salvo que la persona pida otro medio razonable.',
       'Conforme al artículo 31, el responsable comunicará la determinación en un plazo máximo de veinte días hábiles contados desde que reciba la solicitud, y la hará efectiva, si procede, dentro de los quince días hábiles siguientes a esa comunicación. El artículo 34 prevé que el ejercicio es gratuito; solo pueden cobrarse los costos de reproducción, copias o envío.',
       'Si la persona considera que la respuesta no atiende su solicitud, o si no hay respuesta, puede presentar una solicitud de protección de datos ante la Secretaría Anticorrupción y Buen Gobierno. El artículo 40 da un plazo de quince días hábiles siguientes a la fecha en que el responsable comunique su respuesta. La revisión legal debe confirmar el conducto vigente de esa Secretaría antes de publicar este aviso como definitivo.',
     ],
@@ -116,7 +116,7 @@ export const bloquesAviso: BloqueAviso[] = [
     titulo: 'Seguridad y vulneraciones',
     parrafos: [
       'El artículo 18 pide medidas de seguridad administrativas, técnicas y físicas acordes al riesgo. En este sitio el riesgo previsto es el de una lista de nombres y correos, no el de un expediente clínico. Las medidas mínimas previstas son: no publicar bases de datos en el repositorio, no poner secretos en el código, limitar quién administra MailerLite cuando exista, y usar el sitio estático sin formularios propios que guarden datos en el servidor de la agencia.',
-      'Si una vulneración afectara de forma significativa los derechos patrimoniales o morales de las personas titulares, el artículo 19 prevé informarles de forma inmediata. El canal previsto para ese aviso es [CORREO DE PRIVACIDAD] y, si hiciera falta un aviso más amplio, esta misma página.',
+      'Si una vulneración afectara de forma significativa los derechos patrimoniales o morales de las personas titulares, el artículo 19 prevé informarles de forma inmediata. El canal previsto para ese aviso es [Correo de contacto: pendiente] y, si hiciera falta un aviso más amplio, esta misma página.',
       'Quien intervenga en el tratamiento debe guardar confidencialidad, también después de terminar su relación con el responsable, conforme al artículo 20.',
     ],
   },

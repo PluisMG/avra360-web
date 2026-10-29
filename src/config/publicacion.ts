@@ -1,7 +1,7 @@
 /**
- * El build público no puede llevar marcadores ni la marca de texto provisional.
- * El aviso de privacidad sigue en el repositorio, fuera de src/pages, hasta que
- * existan los datos de Pedro y la revisión legal.
+ * El build público no puede llevar marcadores sueltos ni notas internas.
+ * El aviso de privacidad sí se publica, con noindex, y solo ahí pueden verse
+ * los tres campos pendientes del borrador.
  */
 
 import { readdir, readFile } from 'node:fs/promises';
@@ -30,10 +30,26 @@ export const fragmentosProhibidos = [
   'agenda llena',
   'blindaje',
   'garantizado',
+  'notas para pixel',
+  'pendientes.md',
+  'clave sugerida',
+  'mensaje prellenado',
+  'borrador ·',
+  'revisión seo',
+  'revision seo',
 ] as const;
 
-export function fragmentoProhibido(texto: string) {
-  const plano = texto.toLowerCase();
+const marcadoresAvisoBorrador = [
+  '[responsable: pendiente]',
+  '[domicilio: pendiente]',
+  '[correo de contacto: pendiente]',
+];
+
+export function fragmentoProhibido(texto: string, opciones?: { avisoBorrador?: boolean }) {
+  let plano = texto.toLowerCase();
+  if (opciones?.avisoBorrador) {
+    for (const marca of marcadoresAvisoBorrador) plano = plano.split(marca).join(' ');
+  }
   return fragmentosProhibidos.find((fragmento) => plano.includes(fragmento));
 }
 
@@ -53,7 +69,8 @@ async function listar(directorio: string): Promise<string[]> {
 export async function revisarDirectorioPublico(raiz: string) {
   const hallazgos: string[] = [];
   for (const archivo of await listar(raiz)) {
-    const fragmento = fragmentoProhibido(await readFile(archivo, 'utf8'));
+    const avisoBorrador = archivo.split(path.sep).includes('aviso-de-privacidad');
+    const fragmento = fragmentoProhibido(await readFile(archivo, 'utf8'), { avisoBorrador });
     if (fragmento) hallazgos.push(`${path.relative(raiz, archivo)} contiene «${fragmento}»`);
   }
   return hallazgos;

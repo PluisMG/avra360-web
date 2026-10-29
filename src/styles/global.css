@@ -1,17 +1,17 @@
 :root {
-  --papel: #f3eee6;
-  --papel-2: #e7dfd2;
-  --hoja: #fffcf7;
-  --tinta: #1b2422;
-  --tinta-suave: #3a4744;
-  --bosque: #143f38;
-  --bosque-profundo: #0e2c28;
-  --cobre: #8a3f24;
-  --cobre-claro: #f4e4da;
-  --linea: #ddcfbd;
-  --aviso: #fff8e8;
-  --serif: "Iowan Old Style", Palatino, "Palatino Linotype", Georgia, "Times New Roman", serif;
-  --sans: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --papel: #ffffff;
+  --papel-2: #f5f5f5;
+  --hoja: #ffffff;
+  --tinta: #171717;
+  --tinta-suave: #737373;
+  --acento: #3133fc;
+  --acento-hover: #2c2ed3;
+  --cobre: var(--acento);
+  --cobre-claro: var(--papel-2);
+  --linea: #e6e6e6;
+  --aviso: #f5f5f5;
+  --serif: Inter, "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --sans: Inter, "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
   --sombra: 0 1px 0 rgb(20 36 34 / 0.04);
   --ancho: 70rem;
   color-scheme: light;
@@ -73,12 +73,12 @@ p {
 }
 
 a {
-  color: var(--bosque);
+  color: var(--acento);
   text-underline-offset: 0.16em;
 }
 
 a:hover {
-  color: var(--bosque-profundo);
+  color: var(--acento-hover);
 }
 
 :focus-visible {
@@ -149,9 +149,17 @@ a:hover {
 }
 
 .marca span {
-  font-family: var(--serif);
+  font-family: var(--sans);
   font-size: 1.25rem;
   letter-spacing: -0.03em;
+  color: var(--tinta);
+}
+
+.marca__img {
+  display: block;
+  width: 99px;
+  height: 32px;
+  max-width: none;
 }
 
 .cabecera__acciones {
@@ -175,9 +183,9 @@ a:hover {
   min-width: 48px;
   padding: 0 0.95rem;
   list-style: none;
-  border: 2px solid var(--bosque);
+  border: 2px solid var(--acento);
   border-radius: 999px;
-  color: var(--bosque);
+  color: var(--acento);
   font-weight: 700;
   cursor: pointer;
   background: transparent;
@@ -205,7 +213,7 @@ a:hover {
 }
 
 .enlaces a[aria-current="page"] {
-  color: var(--bosque);
+  color: var(--acento);
   text-decoration: underline;
   text-decoration-thickness: 2px;
 }
@@ -254,8 +262,8 @@ a:hover {
   min-height: 48px;
   padding: 0.65rem 1.15rem;
   border-radius: 999px;
-  border: 2px solid var(--bosque);
-  background: var(--bosque);
+  border: 2px solid var(--tinta);
+  background: var(--tinta);
   color: #fff;
   text-decoration: none;
   font-weight: 700;
@@ -265,19 +273,21 @@ a:hover {
 }
 
 .boton:hover {
-  background: var(--bosque-profundo);
-  border-color: var(--bosque-profundo);
+  background: #11151b;
+  border-color: #11151b;
   color: #fff;
 }
 
 .boton--secundario {
   background: transparent;
-  color: var(--bosque);
+  border-color: var(--acento);
+  color: var(--acento);
 }
 
 .boton--secundario:hover {
   background: var(--papel-2);
-  color: var(--bosque-profundo);
+  border-color: var(--acento-hover);
+  color: var(--acento-hover);
 }
 
 .boton--cabecera {
@@ -326,7 +336,7 @@ main:focus {
 .ficha {
   background: var(--hoja);
   border: 1px solid var(--linea);
-  border-top: 6px solid var(--bosque);
+  border-top: 6px solid var(--acento);
   padding: 1.15rem 1.2rem 0.35rem;
   box-shadow: var(--sombra);
 }
@@ -371,11 +381,15 @@ main:focus {
   background: var(--papel-2);
 }
 
+.seccion--banda .suave {
+  color: var(--tinta);
+}
+
 .nota-clinica {
   max-width: 42rem;
   padding: 0.85rem 1rem;
   background: var(--hoja);
-  border-left: 4px solid var(--bosque);
+  border-left: 4px solid var(--acento);
 }
 
 .rejilla-2 {
@@ -495,9 +509,9 @@ main:focus {
 .marcador {
   display: inline-block;
   padding: 0.05em 0.35em;
-  border: 1px dashed var(--cobre);
-  background: var(--cobre-claro);
-  color: #6a341f;
+  border: 1px dashed var(--acento);
+  background: var(--papel-2);
+  color: var(--tinta);
   font-weight: 750;
 }
 
@@ -530,6 +544,27 @@ main:focus {
 
 .prosa {
   max-width: 42rem;
+}
+
+.prosa a[href^="https://wa.me/"] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  margin: 0.35rem 0 1rem;
+  padding: 0.65rem 1.15rem;
+  border: 2px solid var(--tinta);
+  border-radius: 999px;
+  background: var(--tinta);
+  color: #fff;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.prosa a[href^="https://wa.me/"]:hover {
+  background: #11151b;
+  border-color: #11151b;
+  color: #fff;
 }
 
 .prosa h2 {
@@ -610,7 +645,7 @@ time {
   margin-top: 1.5rem;
   padding: 1.1rem 1.1rem 1.2rem;
   background: var(--hoja);
-  border-top: 6px solid var(--bosque);
+  border-top: 6px solid var(--acento);
 }
 
 .formulario {
@@ -627,7 +662,7 @@ time {
 }
 
 .formulario a {
-  color: var(--bosque);
+  color: var(--acento);
 }
 
 .campo {
@@ -672,7 +707,7 @@ input::placeholder {
   min-width: 24px;
   min-height: 24px;
   margin-top: 0.15rem;
-  accent-color: var(--bosque);
+  accent-color: var(--acento);
 }
 
 .trampa {
@@ -747,14 +782,19 @@ body:has(#consentimiento:not([hidden])) {
 }
 
 .pie {
-  background: var(--bosque);
-  color: var(--papel);
+  background: var(--papel-2);
+  color: var(--tinta);
   padding-block: 2.4rem 1.5rem;
 }
 
 .pie a,
 .pie nav button {
-  color: var(--papel);
+  color: var(--acento);
+}
+
+.pie a:hover,
+.pie nav button:hover {
+  color: var(--acento-hover);
 }
 
 .pie a {
@@ -765,7 +805,7 @@ body:has(#consentimiento:not([hidden])) {
 
 .pie h2 {
   font-size: 1.45rem;
-  color: var(--papel);
+  color: var(--tinta);
 }
 
 .pie .formulario,
@@ -804,15 +844,29 @@ body:has(#consentimiento:not([hidden])) {
 }
 
 .pie .formulario a {
-  color: var(--bosque);
+  color: var(--acento);
 }
 
 .legal {
   margin-top: 1.4rem;
   padding-top: 1rem;
-  border-top: 1px solid rgb(243 238 230 / 0.35);
-  color: var(--papel);
+  border-top: 1px solid var(--linea);
+  color: var(--tinta);
   font-size: 0.9375rem;
+}
+
+.chat-estado {
+  width: min(var(--ancho), calc(100% - 2rem));
+  margin: 0 auto 1.25rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--linea);
+  border-left: 4px solid var(--acento);
+  background: var(--hoja);
+  color: var(--tinta);
+}
+
+.chat-estado p:last-child {
+  margin-bottom: 0;
 }
 
 .legal p:last-child {
@@ -852,6 +906,11 @@ body:has(#consentimiento:not([hidden])) {
     grid-row: 1;
   }
 
+  .marca__img {
+    width: 124px;
+    height: 40px;
+  }
+
   .menu {
     grid-column: 2;
     grid-row: 1;
@@ -883,8 +942,18 @@ body:has(#consentimiento:not([hidden])) {
   .consentimiento .contenedor {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
-    gap: 1rem 1.5rem;
+    gap: 0.35rem 1.5rem;
     align-items: center;
+  }
+
+  .consentimiento h2,
+  .consentimiento p {
+    grid-column: 1;
+  }
+
+  .consentimiento .acciones {
+    grid-column: 2;
+    grid-row: 1 / span 2;
   }
 
   .consentimiento .acciones {

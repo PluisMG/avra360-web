@@ -1,8 +1,7 @@
 ---
 import { getCollection, render } from 'astro:content';
 import Migas from '../components/Migas.astro';
-import EnlaceWhatsapp from '../components/EnlaceWhatsapp.astro';
-import { mensajesWhatsapp } from '../config/agencia';
+import { mensajeDePagina } from '../config/agencia';
 import { exigirPaginasConocidas } from '../config/paginas';
 import { jsonLdMigas } from '../config/schema';
 import Base from '../layouts/Base.astro';
@@ -27,7 +26,7 @@ if (!origen) throw new Error('El build necesita SITE para el JSON-LD de la pági
 <Base
   titulo={pagina.data.titulo}
   descripcion={pagina.data.descripcion}
-  mensajeWhatsapp={mensajesWhatsapp.inicio}
+  mensajeWhatsapp={mensajeDePagina(pagina.data.slug)}
   sufijo={pagina.data.sufijo !== false}
   jsonLdExtra={[jsonLdMigas(origen, pagina.data.slug, pagina.data.h1, 'raiz')]}
 >
@@ -37,6 +36,5 @@ if (!origen) throw new Error('El build necesita SITE para el JSON-LD de la pági
     <div class="prosa">
       <Content />
     </div>
-    <EnlaceWhatsapp mensaje={mensajesWhatsapp.inicio} />
   </article>
 </Base>

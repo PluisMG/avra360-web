@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { enlaceAPaginaAusente, guiaPilar, hrefTarjetaInicio, seoDeGuia } from './paginas.ts';
 import { datosDeMarkdown } from './ediciones-sitemap.ts';
-import { grafoOrganizacion, jsonLdArticulo, serializar } from './schema.ts';
+import { grafoOrganizacion, jsonLdArticulo, jsonLdGuia, serializar } from './schema.ts';
 
 const origen = 'https://agencia-prueba.mx';
 
@@ -25,7 +25,7 @@ describe('JSON-LD de la organización', () => {
     assert.equal(datos['@graph'][1].jobTitle, 'Fundador');
     assert.equal(json.includes('{{'), false);
     assert.equal(json.includes('9613164292'), false);
-    assert.equal(agencia.logo.url, 'https://agencia-prueba.mx/logo-512.png');
+    assert.equal(agencia.logo.url, 'https://agencia-prueba.mx/brand/avra360-logo-header.svg');
     assert.deepEqual(
       agencia.hasOfferCatalog.itemListElement.map(
         (oferta: { itemOffered: { url: string } }) => oferta.itemOffered.url,
@@ -94,6 +94,26 @@ describe('enlaces que dependen de un archivo', () => {
     }
     assert.equal(enlaceAPaginaAusente('/servicios/marketing-para-psicologos', publicados), true);
     assert.equal(enlaceAPaginaAusente('/servicios/diagnostico-digital', new Set()), true);
+  });
+});
+
+describe('JSON-LD de la guía', () => {
+  it('deja Guías sin enlace y cita las fuentes', () => {
+    const datos = JSON.parse(
+      jsonLdGuia(origen, {
+        slug: 'cofepris',
+        h1: '¿Aviso o permiso de publicidad de COFEPRIS?',
+        titulo: '¿Aviso o permiso de publicidad COFEPRIS? Guía para médicos',
+        descripcion: 'Cuándo basta el aviso de publicidad y cuándo se necesita permiso de COFEPRIS, qué cuesta y qué datos lleva, explicado para consultorios y clínicas.',
+        fuentes: ['https://www.gob.mx/cofepris'],
+      }),
+    );
+    const migas = datos['@graph'][1];
+    assert.equal(datos['@graph'][0]['@type'], 'Article');
+    assert.deepEqual(datos['@graph'][0].citation, ['https://www.gob.mx/cofepris']);
+    assert.equal(migas['@type'], 'BreadcrumbList');
+    assert.equal(migas.itemListElement[1].name, 'Guías');
+    assert.equal(migas.itemListElement[1].item, undefined);
   });
 });
 

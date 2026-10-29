@@ -132,8 +132,12 @@ for (const archivo of htmls) {
       }
     }
   }
-  if (publica === '/casos/mentalcareclinic' && /<img\b/i.test(html)) {
-    anotar(`${publica} muestra una imagen. MentalCareClinic sigue solo con texto hasta la autorización por escrito.`);
+  if (publica === '/casos/mentalcareclinic') {
+    const imagenes = [...html.matchAll(/<img\b[^>]*>/gi)].map((coincidencia) => coincidencia[0]);
+    const ajenas = imagenes.filter((etiqueta) => !etiqueta.includes('/brand/avra360-logo-header.svg'));
+    if (ajenas.length > 0) {
+      anotar(`${publica} muestra una imagen. MentalCareClinic sigue solo con texto hasta la autorización por escrito.`);
+    }
   }
 
   const canonica = html.match(/rel="canonical" href="([^"]+)"/);
@@ -265,16 +269,36 @@ const atom = rss.match(/<atom:link[^>]*href="([^"]+)"/);
 if (atom) anotarOrigen(atom[1]);
 if (rss.includes('{{')) anotar('El RSS contiene un marcador {{.');
 
-if (!(await existeRuta('/logo-512.png'))) anotar('Falta logo-512.png en el build.');
+if (await existeRuta('/logo-512.png')) anotar('No debe publicarse logo-512.png.');
 if (!(await existeRuta('/favicon.ico'))) anotar('Falta favicon.ico.');
+if (!(await existeRuta('/brand/avra360-favicon.svg'))) anotar('Falta el favicon SVG.');
+if (!(await existeRuta('/brand/avra360-favicon-32.png'))) anotar('Falta el favicon de 32 px.');
+if (!(await existeRuta('/brand/avra360-favicon-180.png'))) anotar('Falta el apple-touch-icon.');
+if (!encabezados.includes('Content-Type: image/png')) anotar('favicon.ico debe servirse como image/png.');
+const pngs = await listar(dist, '.png');
+for (const archivo of pngs) {
+  const nombre = path.basename(archivo);
+  if (!['avra360-favicon-32.png', 'avra360-favicon-180.png', 'og.png'].includes(nombre)) {
+    anotar(`PNG no permitido en el build: ${nombre}. No se publica un PNG del logo.`);
+  }
+}
 if (!(await existeRuta('/sitemap.xml'))) anotar('Falta sitemap.xml.');
 if (origenes.size > 1) {
   anotar(`Canonical, Open Graph, sitemap, RSS o schema no comparten un solo origen: ${[...origenes].join(', ')}.`);
 }
 
 if (!(await existeRuta('/404'))) anotar('Falta la página 404.');
-if (await existeRuta('/aviso-de-privacidad')) {
-  anotar('El aviso de privacidad no debe salir en el build público.');
+if (!(await existeRuta('/aviso-de-privacidad'))) {
+  anotar('Falta el borrador del aviso de privacidad.');
+} else {
+  const avisoHtml = await readFile(await archivoDe('/aviso-de-privacidad'), 'utf8');
+  if (!avisoHtml.includes('noindex')) anotar('El aviso de privacidad debe ir con noindex.');
+  if (!avisoHtml.includes('Borrador — pendiente de aprobación de Pedro Luis Maldonado Gordillo')) {
+    anotar('Falta la nota visible del borrador del aviso de privacidad.');
+  }
+  for (const marca of ['[Responsable: pendiente]', '[Domicilio: pendiente]', '[Correo de contacto: pendiente]']) {
+    if (!avisoHtml.includes(marca)) anotar(`El aviso de privacidad no marca ${marca}.`);
+  }
 }
 for (const hallazgo of await revisarDirectorioPublico(dist)) anotar(hallazgo);
 

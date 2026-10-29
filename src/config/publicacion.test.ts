@@ -78,5 +78,17 @@ describe('detector del build', () => {
     assert.equal(fragmentoProhibido('No ofrecemos el primer lugar en Google.'), undefined);
     assert.equal(fragmentoProhibido('conforme a la LFPDPPP'), undefined);
     assert.equal(fragmentoProhibido('MKT Creativa © 2026. Tuxtla Gutiérrez, Chiapas.'), undefined);
+    assert.equal(fragmentoProhibido('## Notas para Pixel'), 'notas para pixel');
+    assert.equal(fragmentoProhibido('ver PENDIENTES.md'), 'pendientes.md');
+    assert.equal(
+      fragmentoProhibido('[Domicilio: pendiente] y [Correo de contacto: pendiente]'),
+      '[domicilio',
+    );
+    assert.equal(
+      fragmentoProhibido('[Responsable: pendiente] [Domicilio: pendiente] [Correo de contacto: pendiente]', {
+        avisoBorrador: true,
+      }),
+      undefined,
+    );
   });
 });

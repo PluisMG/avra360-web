@@ -1,9 +1,9 @@
 import { pendientes } from './agencia';
 
 export const MARCADORES = [
-  pendientes.razonSocial,
+  pendientes.responsable,
   pendientes.domicilio,
-  pendientes.correoPrivacidad,
+  pendientes.correoContacto,
   pendientes.horario,
   pendientes.proveedorHospedaje,
 ] as const;

@@ -2,7 +2,7 @@
 
 Sitio estático de MKT Creativa, agencia de marketing y publicidad de Pedro Luis Maldonado Gordillo en Tuxtla Gutiérrez, Chiapas. El contenido está en español de México.
 
-Los textos de marketing son los de Creativo, del 26 de octubre de 2026. El aviso de privacidad sigue como borrador en el repositorio y **no entra al build** hasta tener los datos de Pedro y la revisión legal.
+Los textos de marketing son los de Creativo, del 26 de octubre de 2026. El aviso de privacidad se publica como borrador, con noindex, hasta la aprobación de Pedro Luis Maldonado Gordillo.
 
 ## Requisitos
 
@@ -32,7 +32,9 @@ npm run verificar
 | Textos de las páginas fijas y mensajes de cada pantalla | `src/config/textos.ts` |
 | Páginas que solo existen si hay archivo | `src/content/paginas/<slug>.md` |
 | Catálogo de slugs aprobados | `src/config/paginas.ts` |
-| Borrador del aviso de privacidad (fuera del build) | `src/config/aviso.ts` y `src/borradores/aviso-de-privacidad.astro` |
+| Logo, favicons | `src/brand/logo.ts` |
+| Acento | `--acento` y `--acento-hover` en `src/styles/global.css` |
+| Aviso de privacidad (borrador, noindex) | `src/config/aviso.ts` y `src/pages/aviso-de-privacidad.astro` |
 | Ediciones del boletín | `src/content/boletin/*.md` |
 | Precios (apagados) | `mostrarPrecios` y `precios` en `src/config/agencia.ts` |
 

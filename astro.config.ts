@@ -52,6 +52,11 @@ function encabezadosCloudflare(): AstroIntegration {
       'astro:build:done': async ({ dir }) => {
         const raiz = path.resolve(fileURLToPath(dir));
         const paginas = await listarHtml(raiz);
+        for (const archivo of paginas) {
+          const html = await readFile(archivo, 'utf8');
+          const ajustado = html.replace(/<a\b[^>]*>/g, enlaceExterno);
+          if (ajustado !== html) await writeFile(archivo, ajustado);
+        }
         const inicio = paginas.find((archivo) => path.resolve(archivo) === path.join(raiz, 'index.html'));
         if (!inicio) {
           throw new Error(`No se encontró index.html en ${raiz} para calcular la CSP.`);
@@ -120,6 +125,9 @@ function encabezadosCloudflare(): AstroIntegration {
         const cuerpo = [
           ...lineasEncabezado,
           '',
+          '/favicon.ico',
+          '  Content-Type: image/png',
+          '',
           '/_astro/*',
           '  Cache-Control: public, max-age=31536000, immutable',
           '',
@@ -143,6 +151,16 @@ function encabezadosCloudflare(): AstroIntegration {
       },
     },
   };
+}
+
+function enlaceExterno(etiqueta: string) {
+  const href = etiqueta.match(/\bhref="(https?:\/\/[^"]+)"/);
+  if (!href) return etiqueta;
+  const sinRel = etiqueta.replace(/\srel="[^"]*"/, '');
+  const relPrevio = etiqueta.match(/\srel="([^"]*)"/)?.[1] ?? '';
+  const rel = new Set(relPrevio.split(/\s+/).filter((valor) => valor && valor !== 'nofollow'));
+  rel.add('noopener');
+  return sinRel.replace(/>$/, ` rel="${[...rel].join(' ')}">`);
 }
 
 export default defineConfig({

@@ -1,3 +1,4 @@
+import { marca } from '../brand/logo.ts';
 import { agencia, telefono } from './agencia.ts';
 import { catalogoServicios } from './paginas.ts';
 
@@ -62,12 +63,14 @@ export function grafoOrganizacion(origen: string, slugsPublicados: readonly stri
     name: agencia.nombre,
     description: descripcionAgencia,
     url: `${base}/`,
-    logo: {
-      '@type': 'ImageObject',
-      url: `${base}/logo-512.png`,
-      width: 512,
-      height: 512,
-    },
+    ...(marca.logo.tipo === 'svg' && marca.logo.ruta
+      ? {
+          logo: {
+            '@type': 'ImageObject',
+            url: `${base}${marca.logo.ruta}`,
+          },
+        }
+      : {}),
     image: `${base}/og.png`,
     telephone: telefono.e164,
     address: {
@@ -166,6 +169,37 @@ export function jsonLdServicio(
         { name: 'Inicio', item: `${base}/` },
         { name: 'Servicios', item: `${base}/servicios` },
         { name: h1 },
+      ]),
+    ],
+  });
+}
+
+export function jsonLdGuia(
+  origen: string,
+  datos: { slug: string; h1: string; titulo: string; descripcion: string; fuentes: readonly string[] },
+) {
+  const base = origenLimpio(origen);
+  const url = `${base}/guias/${datos.slug}`;
+  const articulo: Record<string, unknown> = {
+    '@type': 'Article',
+    '@id': `${url}#articulo`,
+    headline: datos.h1,
+    name: datos.titulo,
+    description: datos.descripcion,
+    inLanguage: 'es-MX',
+    mainEntityOfPage: url,
+    author: { '@id': `${base}/#agencia` },
+    publisher: { '@id': `${base}/#agencia` },
+  };
+  if (datos.fuentes.length > 0) articulo.citation = [...datos.fuentes];
+  return serializar({
+    '@context': 'https://schema.org',
+    '@graph': [
+      articulo,
+      migas([
+        { name: 'Inicio', item: `${base}/` },
+        { name: 'Guías' },
+        { name: datos.h1 },
       ]),
     ],
   });

@@ -1,9 +1,4 @@
 ---
-/*
-  Borrador fuera del build. No mover a src/pages hasta tener razón social,
-  domicilio, correos y revisión legal. Mientras tanto el formulario del boletín
-  permanece desactivado y ninguna página enlaza aquí.
-*/
 import Migas from '../components/Migas.astro';
 import Texto from '../components/Texto.astro';
 import { mensajesWhatsapp } from '../config/agencia';
@@ -13,13 +8,15 @@ import Base from '../layouts/Base.astro';
 import { seo } from '../config/textos';
 ---
 
-<Base titulo={seo.aviso.titulo} descripcion={seo.aviso.descripcion} mensajeWhatsapp={mensajesWhatsapp.aviso}>
+<Base
+  titulo={seo.aviso.titulo}
+  descripcion={seo.aviso.descripcion}
+  mensajeWhatsapp={mensajesWhatsapp.aviso}
+  noindex
+>
   <div class="contenedor seccion prosa">
     <Migas pasos={[{ href: '/', etiqueta: 'Inicio' }, { etiqueta: 'Aviso de privacidad' }]} />
-    <p class="aviso-borrador" role="note">
-      <strong>Borrador para revisión legal.</strong> No use este texto como aviso definitivo hasta sustituir los
-      marcadores y hasta que lo revise un abogado. Los datos entre corchetes están pendientes.
-    </p>
+    <p class="aviso-borrador" role="note">Borrador — pendiente de aprobación de Pedro Luis Maldonado Gordillo</p>
     <h1>Aviso de privacidad integral</h1>
     <p>
       Borrador del {formatearFecha(aviso.fechaBorrador)}. Se redactó con la {aviso.ley}

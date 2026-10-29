@@ -4,10 +4,12 @@ import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { getCollection } from 'astro:content';
+import { marca } from '../brand/logo';
 import { agencia } from '../config/agencia';
 import { vistaPrevia } from '../config/entorno';
 import { jsonLdOrganizacion, urlCanonica } from '../config/schema';
 import Cabecera from '../components/Cabecera.astro';
+import Chat from '../components/Chat.astro';
 import Consentimiento from '../components/Consentimiento.astro';
 import Pie from '../components/Pie.astro';
 
@@ -53,11 +55,13 @@ const integridadConsentimiento = createHash('sha256')
     <title>{tituloDocumento}</title>
     <meta name="description" content={descripcion} />
     <meta name="robots" content={robots} />
-    <meta name="theme-color" content="#143f38" />
+    <meta name="theme-color" content="#ffffff" />
     <meta name="color-scheme" content="light" />
     <link rel="canonical" href={canonica} />
-    <link rel="icon" href="/favicon.ico" sizes="any" />
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href={marca.favicon.svg} type="image/svg+xml" />
+    <link rel="icon" href={marca.favicon.png} type="image/png" sizes="32x32" />
+    <link rel="icon" href={marca.favicon.ico} type="image/png" sizes="any" />
+    <link rel="apple-touch-icon" href={marca.favicon.apple} sizes="180x180" />
     <link rel="alternate" type="application/rss+xml" title={`Boletín ${agencia.nombre}`} href="/boletin/rss.xml" />
     <meta property="og:locale" content="es_MX" />
     <meta property="og:type" content={ogType} />
@@ -84,6 +88,7 @@ const integridadConsentimiento = createHash('sha256')
     <main id="contenido" tabindex="-1">
       <slot />
     </main>
+    <Chat />
     <Consentimiento />
     <Pie mensaje={mensajeWhatsapp} />
     <script

@@ -21,9 +21,9 @@ export const telefono = {
 } as const;
 
 export const pendientes = {
-  razonSocial: '[RAZÓN SOCIAL]',
-  domicilio: '[DOMICILIO]',
-  correoPrivacidad: '[CORREO DE PRIVACIDAD]',
+  responsable: '[Responsable: pendiente]',
+  domicilio: '[Domicilio: pendiente]',
+  correoContacto: '[Correo de contacto: pendiente]',
   horario: '[HORARIO]',
   proveedorHospedaje: '[PROVEEDOR DE HOSPEDAJE]',
 } as const;
@@ -58,4 +58,25 @@ export const mensajesWhatsapp = {
   aviso: 'Hola. Tengo una duda sobre el aviso de privacidad de MKT Creativa.',
   error: 'Hola. No encontré una página en el sitio de MKT Creativa y necesito orientación.',
   ejemplo: 'Hola. Vi la edición de ejemplo del boletín de MKT Creativa y quiero más información.',
+  paginasWeb: 'Hola. Me interesa una página web para mi consultorio o clínica en Chiapas.',
+  seoLocal: 'Hola. Quiero mejorar cómo aparece mi consultorio en Google Maps.',
+  publicidadCofepris: 'Hola. Quiero que revisen la publicidad de mi consultorio con criterio COFEPRIS.',
+  psicologos: 'Hola. Soy profesional de la salud mental en Chiapas y me interesa el marketing para mi consulta.',
+  diagnostico: 'Hola. Quiero solicitar el diagnóstico digital de MKT Creativa para mi consultorio o clínica.',
+  guiaCofepris: 'Hola. Leí la guía de aviso o permiso de publicidad de COFEPRIS y quiero que revisen mi anuncio.',
+  nosotros: 'Hola. Conocí a MKT Creativa en su sitio y quiero conversar sobre el marketing de mi clínica o consultorio.',
 } as const;
+
+const mensajePorSlug: Record<string, string> = {
+  'paginas-web-para-medicos': mensajesWhatsapp.paginasWeb,
+  'seo-local-google-maps': mensajesWhatsapp.seoLocal,
+  'publicidad-medica-cofepris': mensajesWhatsapp.publicidadCofepris,
+  'marketing-para-psicologos': mensajesWhatsapp.psicologos,
+  'diagnostico-digital': mensajesWhatsapp.diagnostico,
+  cofepris: mensajesWhatsapp.guiaCofepris,
+  nosotros: mensajesWhatsapp.nosotros,
+};
+
+export function mensajeDePagina(slug: string) {
+  return mensajePorSlug[slug] ?? mensajesWhatsapp.servicios;
+}

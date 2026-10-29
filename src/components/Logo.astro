@@ -1,0 +1,26 @@
+---
+import { marca } from '../brand/logo';
+
+interface Props {
+  actual?: boolean;
+}
+
+const { actual = false } = Astro.props;
+const { logo } = marca;
+---
+
+<a class="marca" href="/" aria-current={actual ? 'page' : undefined}>
+  {
+    logo.tipo === 'svg' ? (
+      <img
+        class="marca__img"
+        src={logo.ruta}
+        alt={logo.alt}
+        width={logo.ancho}
+        height={logo.alto}
+      />
+    ) : (
+      <span>{logo.texto}</span>
+    )
+  }
+</a>
