@@ -37,7 +37,14 @@ for (const vista of vistas) {
       await expect(page.locator('footer')).toContainText(PIE);
       await expect(page.locator('#nota-config')).toHaveText(CONFIG);
       await expect(page.locator('#mensajes')).toHaveAttribute('aria-live', 'polite');
-      await expect(page.locator('.logo')).toHaveText('AVRA 360');
+      const logo = page.locator('.logo img');
+      await expect(logo).toHaveAttribute('alt', 'AVRA 360');
+      await expect(logo).toHaveAttribute('width', '124');
+      await expect(logo).toHaveAttribute('height', '40');
+      const cajaLogo = await logo.boundingBox();
+      expect(Math.round(cajaLogo?.height ?? 0)).toBe(vista.width >= 768 ? 40 : 32);
+      await expect(page.locator('link[rel="icon"][type="image/svg+xml"]')).toHaveAttribute('href', '/brand/avra360-favicon.svg');
+      await expect(page.locator('link[rel="apple-touch-icon"]')).toHaveAttribute('href', '/brand/avra360-favicon-180.png');
       const html = await page.content();
       expect(html).not.toContain('fonts.googleapis');
       expect(html.toLowerCase()).not.toContain('cookie');
@@ -125,6 +132,20 @@ for (const vista of vistas) {
     });
   });
 }
+
+test('con el chat apagado no se carga Turnstile', async ({ page }) => {
+  const pedidos: string[] = [];
+  page.on('request', (peticion) => pedidos.push(peticion.url()));
+  await page.goto('/');
+  await page.locator('#mensaje').focus();
+  await page.getByRole('button', { name: 'Crear mi marca' }).click();
+  await expect(page.locator('body')).toHaveClass(/en-conversacion/);
+  expect(pedidos.filter((url) => url.includes('challenges.cloudflare.com'))).toEqual([]);
+  expect(await page.content()).not.toContain('challenges.cloudflare.com');
+  const icono = await page.request.get('/favicon.ico');
+  expect(icono.status()).toBe(200);
+  expect(icono.headers()['content-type'] ?? '').not.toContain('text/html');
+});
 
 test('la tipografía es local y la página usa dvh', async ({ page }) => {
   await page.goto('/');

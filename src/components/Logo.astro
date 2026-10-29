@@ -1,8 +1,7 @@
 ---
-/**
- * Wordmark aislado. Para usar un SVG, sustituya el texto de este
- * componente y conserve el enlace a /.
- */
+import { marca } from '../brand/logo';
 ---
 
-<a class="logo" href="/">AVRA 360</a>
+<a class="logo" href="/">
+  <img src={marca.logo.ruta} width={marca.logo.ancho} height={marca.logo.alto} alt={marca.logo.alt} />
+</a>

@@ -71,10 +71,20 @@ a:hover { color: var(--acento-hover); }
 }
 
 .logo {
+  display: inline-flex;
+  line-height: 0;
   color: var(--texto);
   text-decoration: none;
-  font-size: 0.95rem;
-  letter-spacing: 0.08em;
+}
+
+.logo img {
+  display: block;
+  height: 32px;
+  width: auto;
+}
+
+@media (min-width: 768px) {
+  .logo img { height: 40px; }
 }
 
 .centro {

@@ -98,6 +98,9 @@ function revisarPublicacion(): AstroIntegration {
           '/chat.js',
           '  Cache-Control: public, max-age=3600',
           '',
+          '/favicon.ico',
+          '  Content-Type: image/png',
+          '',
         ].join('\n');
         await writeFile(path.join(raiz, '_headers'), encabezados);
         if (process.env.PREVIEW === '1') {

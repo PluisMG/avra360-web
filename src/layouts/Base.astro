@@ -1,5 +1,6 @@
 ---
 import inter400 from '@fontsource/inter/files/inter-latin-400-normal.woff2?url';
+import { marca } from '../brand/logo';
 import '../styles/fuentes.css';
 import '../styles/global.css';
 
@@ -23,7 +24,14 @@ const robotsFinal = robots ?? (vistaPrevia ? 'noindex, nofollow' : undefined);
     <meta name="description" content={descripcion} />
     {robotsFinal && <meta name="robots" content={robotsFinal} />}
     <meta name="theme-color" content="#ffffff" />
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <meta property="og:title" content={titulo} />
+    <meta property="og:description" content={descripcion} />
+    <meta property="og:image" content={new URL(marca.og, Astro.site)} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <link rel="icon" href={marca.favicon.svg} type="image/svg+xml" />
+    <link rel="icon" href={marca.favicon.ico} sizes="32x32" type="image/png" />
+    <link rel="apple-touch-icon" href={marca.favicon.apple} />
     <link rel="preload" href={inter400} as="font" type="font/woff2" crossorigin />
   </head>
   <body>
