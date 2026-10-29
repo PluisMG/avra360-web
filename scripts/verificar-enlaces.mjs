@@ -158,8 +158,13 @@ for (const archivo of htmls) {
       }
       continue;
     }
-    if (valor.startsWith('https://wa.me/') && !valor.startsWith('https://wa.me/529611919199?text=')) {
-      anotar(`${publica} tiene un WhatsApp que no usa el número y el mensaje previstos: ${valor}`);
+    if (valor.startsWith('https://wa.me/')) {
+      const numero = valor.split('?')[0]?.replace(/\/$/, '');
+      const conTexto = valor.startsWith('https://wa.me/529611919199?text=');
+      const sinTexto = numero === 'https://wa.me/529611919199';
+      if (!conTexto && !sinTexto) {
+        anotar(`${publica} tiene un WhatsApp que no usa el número de la agencia: ${valor}`);
+      }
     }
     if (/^https?:\/\//.test(valor)) {
       const url = new URL(valor);

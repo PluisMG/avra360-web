@@ -1,0 +1,18 @@
+---
+import { mensajesWhatsapp } from '../../config/agencia';
+import Base from '../../layouts/Base.astro';
+
+const titulo = 'Enlace no válido | MKT Creativa';
+const h1 = 'Este enlace ya no es válido';
+const texto =
+  'Es posible que haya vencido o que ya se haya usado. Si desea recibir el boletín, vuelva a suscribirse y le enviaremos un nuevo correo de confirmación.';
+---
+
+<Base titulo={titulo} descripcion={texto} mensajeWhatsapp={mensajesWhatsapp.boletin} sufijo={false} noindex>
+  <div class="contenedor seccion">
+    <h1>{h1}</h1>
+    <p class="lede">{texto}</p>
+    <p><a class="boton" href="/boletin">Suscribirme de nuevo</a></p>
+    <p><a href="https://wa.me/529611919199">¿Necesita ayuda? Escríbanos por WhatsApp</a></p>
+  </div>
+</Base>

@@ -4,7 +4,7 @@
  * razón social, domicilio y correos— no se publica aquí.
  */
 
-import { consentimientoBoletin, mensajeBoletinApagado } from './suscripcion.ts';
+import { consentimientoBoletin, mensajeBoletinApagado, mensajeTrasEnviar } from './suscripcion.ts';
 
 export const seo = {
   inicio: {
@@ -234,7 +234,7 @@ export const caso = {
 
 export const boletin = {
   h1: 'Boletín de MKT Creativa para clínicas y consultorios',
-  lede: 'Notas breves y prácticas para quienes dirigen clínicas y consultorios en Chiapas: cómo darse a conocer, cómo cuidar su presencia en Google y qué se puede decir en público según la norma sanitaria. Se publica una vez al mes.',
+  lede: 'Notas breves y prácticas para quienes dirigen clínicas y consultorios en Chiapas: cómo darse a conocer, cómo cuidar su presencia en Google y qué se puede decir en público según la norma sanitaria. Llega una vez al mes.',
   ritmoTitulo: 'Qué encontrará en cada edición',
   ritmo: [
     'Un tema principal, explicado de forma concreta y aplicable a su consultorio.',
@@ -259,9 +259,10 @@ export const formularioBoletinTextos = {
   placeholderCorreo: 'nombre@suclinica.mx',
   casilla: consentimientoBoletin.texto,
   boton: 'Suscribirme',
+  exito: mensajeTrasEnviar,
   ayudaApagada: mensajeBoletinApagado,
   leyendaApagada: 'Suscripción no disponible',
-  botonApagado: 'Suscripción no disponible',
+  botonApagado: 'Suscripción próximamente',
 } as const;
 
 export const contacto = {

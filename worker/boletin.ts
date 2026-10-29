@@ -1,4 +1,12 @@
-import { boletinActivo, consentimientoBoletin } from '../src/config/suscripcion.ts';
+import {
+  boletinActivo,
+  consentimientoBoletin,
+  correoConfirmacion,
+  mensajeBoletinApagado,
+  remitenteVisible,
+  rutasBoletin,
+  urlAvisoPublicado,
+} from '../src/config/suscripcion.ts';
 import type { EntornoBoletin } from './entorno.ts';
 
 const CORREO =
@@ -159,10 +167,17 @@ async function leerCampos(request: Request) {
 }
 
 function html(estado: number, titulo: string, parrafo: string) {
-  const cuerpo = `<!doctype html><html lang="es-MX"><meta charset="utf-8"><title>${titulo}</title><body><h1>${titulo}</h1><p>${parrafo}</p></body></html>`;
+  const cuerpo = `<!doctype html><html lang="es-MX"><head><meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><title>${titulo}</title></head><body><h1>${titulo}</h1><p>${parrafo}</p></body></html>`;
   return new Response(cuerpo, {
     status: estado,
     headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' },
+  });
+}
+
+function redirigir(ruta: string) {
+  return new Response(null, {
+    status: 303,
+    headers: { location: ruta, 'cache-control': 'no-store' },
   });
 }
 
@@ -223,7 +238,17 @@ async function guardarContacto(
   return actualizado.ok;
 }
 
-async function enviarConfirmacion(deps: Dependencias, env: EntornoBoletin, email: string, confirmar: string, baja: string) {
+async function enviarConfirmacion(
+  deps: Dependencias,
+  env: EntornoBoletin,
+  email: string,
+  nombre: string,
+  confirmar: string,
+  baja: string,
+  origen: string,
+) {
+  const aviso = urlAvisoPublicado(env.BOLETIN_AVISO_URL, origen);
+  const correo = correoConfirmacion({ nombre, enlace: confirmar, baja, aviso });
   const respuesta = await deps.fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: {
@@ -231,28 +256,37 @@ async function enviarConfirmacion(deps: Dependencias, env: EntornoBoletin, email
       'content-type': 'application/json',
     },
     body: JSON.stringify({
-      from: env.BOLETIN_FROM,
+      from: remitenteVisible(env.BOLETIN_FROM ?? ''),
       to: [email],
-      subject: 'Confirme su suscripción al boletín',
-      text: [
-        'Para recibir el boletín, abra este enlace dentro de las próximas 48 horas:',
-        confirmar,
-        '',
-        'Si no quiere recibirlo, use este enlace de baja:',
-        baja,
-        '',
-        'Si no hace nada, no quedará suscrito.',
-      ].join('\n'),
+      subject: correo.asunto,
+      text: correo.texto,
+      html: correo.html,
     }),
   });
   return respuesta.ok;
 }
 
 function noDisponible(request: Request) {
-  return responder(request, 503, 'Suscripción no disponible', 'La suscripción al boletín no está disponible en este momento.', {
+  return responder(request, 503, 'Suscripción no disponible', mensajeBoletinApagado, {
     ok: false,
     error: 'no_disponible',
   });
+}
+
+function resultado(request: Request, estado: number, ruta: string, json: Record<string, unknown>) {
+  const tipo = request.headers.get('content-type') ?? '';
+  const acepta = request.headers.get('accept') ?? '';
+  if (tipo.includes('application/json') || acepta.includes('application/json')) {
+    return new Response(JSON.stringify(json), {
+      status: estado,
+      headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' },
+    });
+  }
+  if (estado >= 400 && ruta === rutasBoletin.enlaceNoValido) return redirigir(ruta);
+  if (estado >= 400) {
+    return html(estado, 'Suscripción no disponible', mensajeBoletinApagado);
+  }
+  return redirigir(ruta);
 }
 
 export async function manejarBoletin(request: Request, env: EntornoBoletin, parciales: Partial<Dependencias> = {}) {
@@ -278,9 +312,7 @@ export async function manejarBoletin(request: Request, env: EntornoBoletin, parc
     }
     const trampa = typeof campos[CAMPO_TRAMPA] === 'string' ? campos[CAMPO_TRAMPA].trim() : '';
     if (trampa) {
-      return responder(request, 200, 'Solicitud recibida', 'Si el correo es válido, recibirá un mensaje para confirmar.', {
-        ok: true,
-      });
+      return resultado(request, 200, rutasBoletin.enviado, { ok: true });
     }
     const ip = ipDe(request);
     if (!limitarSolicitud(ip || 'desconocida', deps.ahora(), deps.limites)) {
@@ -323,7 +355,7 @@ export async function manejarBoletin(request: Request, env: EntornoBoletin, parc
     const bajaToken = await firmarToken({ ...base, uso: 'baja', exp: base.iat + BAJA_SEGUNDOS }, secret);
     const confirmar = new URL(`/api/boletin/confirmar?token=${encodeURIComponent(confirmarToken)}`, url.origin).href;
     const baja = new URL(`/api/boletin/baja?token=${encodeURIComponent(bajaToken)}`, url.origin).href;
-    const enviado = await enviarConfirmacion(deps, env, email, confirmar, baja);
+    const enviado = await enviarConfirmacion(deps, env, email, nombre, confirmar, baja, url.origin);
     if (!enviado) {
       return responder(request, 502, 'No se pudo enviar la confirmación', 'Intente de nuevo más tarde.', {
         ok: false,
@@ -331,7 +363,7 @@ export async function manejarBoletin(request: Request, env: EntornoBoletin, parc
       });
     }
     console.log(JSON.stringify({ evento: 'boletin_confirmacion_enviada' }));
-    return responder(request, 200, 'Revise su correo', 'Si el correo es válido, recibirá un mensaje para confirmar.', {
+    return resultado(request, 200, rutasBoletin.enviado, {
       ok: true,
       estado: 'confirmacion_enviada',
     });
@@ -347,13 +379,10 @@ export async function manejarBoletin(request: Request, env: EntornoBoletin, parc
     const uso: UsoToken = ruta.endsWith('/baja') ? 'baja' : 'confirmar';
     const leido = await leerToken(token, env.BOLETIN_SIGNING_SECRET ?? '', deps.ahora(), uso);
     if (!leido) {
-      return responder(request, 400, 'Enlace no válido', 'El enlace no es válido.', { ok: false, error: 'token' });
+      return resultado(request, 400, rutasBoletin.enlaceNoValido, { ok: false, error: 'token' });
     }
     if (leido.vencido) {
-      return responder(request, 400, 'Enlace vencido', 'El enlace ya venció. Solicite otro desde el sitio.', {
-        ok: false,
-        error: 'expirado',
-      });
+      return resultado(request, 400, rutasBoletin.enlaceNoValido, { ok: false, error: 'expirado' });
     }
     const confirmado = uso === 'confirmar' ? new Date(deps.ahora()).toISOString() : null;
     const guardado = await guardarContacto(
@@ -369,12 +398,9 @@ export async function manejarBoletin(request: Request, env: EntornoBoletin, parc
     }
     console.log(JSON.stringify({ evento: uso === 'baja' ? 'boletin_baja' : 'boletin_confirmado' }));
     if (uso === 'baja') {
-      return responder(request, 200, 'Baja registrada', 'Ya no recibirá el boletín.', { ok: true, estado: 'baja' });
+      return resultado(request, 200, rutasBoletin.baja, { ok: true, estado: 'baja' });
     }
-    return responder(request, 200, 'Suscripción confirmada', 'Su correo quedó confirmado. Recibirá el boletín.', {
-      ok: true,
-      estado: 'confirmado',
-    });
+    return resultado(request, 200, rutasBoletin.confirmada, { ok: true, estado: 'confirmado' });
   }
 
   return new Response(null, { status: 404 });

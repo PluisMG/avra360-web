@@ -114,10 +114,32 @@ describe('suscripción del boletín', () => {
     assert.equal((await respuesta.json()).estado, 'confirmacion_enviada');
     assert.equal(red.llamadas.length, 1);
     assert.equal(red.llamadas[0].url, 'https://api.resend.com/emails');
+    assert.equal(red.llamadas[0].body.subject, 'Confirme su suscripción al boletín de MKT Creativa');
+    assert.equal(red.llamadas[0].body.from, 'MKT Creativa <boletin@example.com>');
     const texto = String(red.llamadas[0].body.text);
+    const html = String(red.llamadas[0].body.html);
+    assert.match(texto, /Hola, Ana:/);
+    assert.match(texto, /Este enlace vence en 48 horas\./);
     assert.match(texto, /\/api\/boletin\/confirmar\?token=/);
     assert.match(texto, /\/api\/boletin\/baja\?token=/);
+    assert.equal(texto.includes('Consulte nuestro aviso de privacidad.'), false);
+    assert.match(html, /Un clic y recibirá el boletín mensual para clínicas y consultorios\./);
+    assert.match(html, />Confirmar</);
     assert.equal(red.llamadas.some((llamada) => llamada.url.includes('/contacts')), false);
+  });
+
+  it('si no hay nombre saluda con Hola: y solo enlaza privacidad si hay URL publicada', async () => {
+    const red = captura();
+    const respuesta = await manejarBoletin(
+      solicitud('/api/boletin/suscribir', json({ ...alta, nombre: '  ', correo: 'persona@clinica.mx' })),
+      entorno({ BOLETIN_AVISO_URL: 'https://agencia-prueba.mx/aviso-de-privacidad' }),
+      deps(red.fetchImpl),
+    );
+    assert.equal(respuesta.status, 200);
+    const texto = String(red.llamadas[0].body.text);
+    assert.match(texto, /^Un clic y recibirá el boletín mensual para clínicas y consultorios\.\n\nHola:\n/);
+    assert.match(texto, /Consulte nuestro aviso de privacidad\.\nhttps:\/\/agencia-prueba\.mx\/aviso-de-privacidad/);
+    assert.equal(String(red.llamadas[0].body.html).includes('href="https://agencia-prueba.mx/aviso-de-privacidad"'), true);
   });
 });
 
@@ -143,7 +165,9 @@ describe('confirmación y baja', () => {
     const red = captura();
     const token = await tokenDe(env, 'confirmar', Math.floor(AHORA / 1000) + 3600);
     const respuesta = await manejarBoletin(
-      solicitud(`/api/boletin/confirmar?token=${encodeURIComponent(token)}`),
+      solicitud(`/api/boletin/confirmar?token=${encodeURIComponent(token)}`, {
+        headers: { accept: 'application/json' },
+      }),
       env,
       deps(red.fetchImpl),
     );
@@ -197,7 +221,10 @@ describe('confirmación y baja', () => {
     for (const method of ['GET', 'POST'] as const) {
       const red = captura();
       const respuesta = await manejarBoletin(
-        solicitud(`/api/boletin/baja?token=${encodeURIComponent(token)}`, { method }),
+        solicitud(`/api/boletin/baja?token=${encodeURIComponent(token)}`, {
+          method,
+          headers: { accept: 'application/json' },
+        }),
         env,
         deps(red.fetchImpl),
       );
@@ -217,7 +244,9 @@ describe('confirmación y baja', () => {
       return new Response('{"id":"contact_1"}', { status: 200 });
     };
     const respuesta = await manejarBoletin(
-      solicitud(`/api/boletin/confirmar?token=${encodeURIComponent(token)}`),
+      solicitud(`/api/boletin/confirmar?token=${encodeURIComponent(token)}`, {
+        headers: { accept: 'application/json' },
+      }),
       env,
       deps(fetchImpl),
     );

@@ -126,7 +126,7 @@ Aunque se muestre, esa página lleva `noindex` y no entra al sitemap. Quítela d
 
 MailerLite ya no se usa. El formulario, en `/boletin` y en el pie, hace `POST /api/boletin/suscribir` en el mismo sitio. La CSP deja `form-action 'self'` y no abre ningún dominio de correo.
 
-Hoy el formulario se ve desactivado. El texto visible es genérico: falta el texto exacto de Creativo. No ponga ese pendiente en el HTML.
+Hoy el formulario se ve desactivado, con el texto de Creativo: «La suscripción al boletín estará disponible pronto. Mientras tanto, puede escribirnos por WhatsApp.»
 
 El Worker (`worker/index.ts`, configurado en `wrangler.jsonc`) atiende `/api/boletin/*` y deja el resto de las rutas a los archivos de `dist/`. No ejecute `wrangler deploy` desde este repositorio.
 
@@ -144,7 +144,9 @@ wrangler secret put BOLETIN_FROM
 wrangler secret put BOLETIN_SIGNING_SECRET
 ```
 
-`RESEND_AUDIENCE_ID` es el id del segmento de Resend (antes, audiencia). `BOLETIN_FROM` es el remitente, por ejemplo `Boletín <boletin@el-dominio>`. `BOLETIN_SIGNING_SECRET` firma los enlaces; use al menos 16 caracteres al azar. Si falta cualquiera, o si `BOLETIN_ACTIVO` no es `1`, `POST /api/boletin/suscribir` responde 503.
+`RESEND_AUDIENCE_ID` es el id del segmento de Resend (antes, audiencia). `BOLETIN_FROM` es la dirección del remitente; el nombre visible del correo es «MKT Creativa». `BOLETIN_SIGNING_SECRET` firma los enlaces; use al menos 16 caracteres al azar. Si falta cualquiera, o si `BOLETIN_ACTIVO` no es `1`, `POST /api/boletin/suscribir` responde 503.
+
+El correo de confirmación enlaza al aviso de privacidad solo si `BOLETIN_AVISO_URL` es una URL https o una ruta del sitio. Esa variable no es un secreto y hoy no se define: el aviso de privacidad no es una página definitiva del build, y el correo se envía igual, sin ese enlace. Cuando la página esté publicada, se pone la URL y el correo dice «Consulte nuestro aviso de privacidad.»
 
 ### Doble opt-in y baja
 
@@ -265,7 +267,7 @@ Estos datos no aparecen en el sitio. No hay marcadores en su lugar:
 - Hallazgos del diagnóstico de MentalCareClinic, fecha y dirección del sitio nuevo, y estado de su ficha de Google, si Pedro autoriza publicarlos
 - Condiciones del piloto y testimonio de la dirección, solo con autorización
 - Dominio real (`SITE`). El lanzamiento no puede salir con `https://mktcreativa.example` ni con `PREVIEW=1`
-- Texto exacto de Creativo para el formulario del boletín cuando está apagado. Hoy se usa un mensaje genérico
+- URL publicada del aviso de privacidad (`BOLETIN_AVISO_URL`) para el correo de confirmación. Hoy el correo no lleva ese enlace
 - Las guías del catálogo que todavía no tienen archivo
 - Teléfono fijo, si alguna vez es distinto del WhatsApp ya publicado
 - Dominio verificado en Resend y los secrets del boletín (`RESEND_API_KEY`, `RESEND_AUDIENCE_ID`, `BOLETIN_FROM`, `BOLETIN_SIGNING_SECRET`) más `BOLETIN_ACTIVO=1`

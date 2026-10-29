@@ -10,4 +10,6 @@ export interface EntornoBoletin {
   RESEND_AUDIENCE_ID?: string;
   BOLETIN_FROM?: string;
   BOLETIN_SIGNING_SECRET?: string;
+  /** URL publicada del aviso. Vacía hasta que esa página exista en el build. */
+  BOLETIN_AVISO_URL?: string;
 }

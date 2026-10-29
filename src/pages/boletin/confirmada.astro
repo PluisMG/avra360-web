@@ -1,0 +1,18 @@
+---
+import { mensajesWhatsapp } from '../../config/agencia';
+import Base from '../../layouts/Base.astro';
+
+const titulo = 'Suscripción confirmada | MKT Creativa';
+const h1 = 'Suscripción confirmada';
+const texto =
+  'Gracias. A partir de ahora recibirá el boletín mensual de MKT Creativa en su correo. Puede darse de baja en cualquier momento con el enlace que va al final de cada edición.';
+---
+
+<Base titulo={titulo} descripcion={texto} mensajeWhatsapp={mensajesWhatsapp.boletin} sufijo={false} noindex>
+  <div class="contenedor seccion">
+    <h1>{h1}</h1>
+    <p class="lede">{texto}</p>
+    <p><a class="boton" href="/boletin">Ver ediciones anteriores</a></p>
+    <p><a href="/">Volver al inicio</a></p>
+  </div>
+</Base>

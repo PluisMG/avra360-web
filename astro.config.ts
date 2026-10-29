@@ -178,6 +178,10 @@ export default defineConfig({
         if (url.pathname.includes('/404')) return false;
         if (url.pathname.includes('/boletin/ejemplo-')) return false;
         if (url.pathname.includes('/aviso-de-privacidad')) return false;
+        if (url.pathname.includes('/boletin/enviado')) return false;
+        if (url.pathname.includes('/boletin/confirmada')) return false;
+        if (url.pathname.includes('/boletin/enlace-no-valido')) return false;
+        if (url.pathname.includes('/boletin/baja-confirmada')) return false;
         return true;
       },
       async serialize(item) {
