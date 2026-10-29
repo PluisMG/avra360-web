@@ -1,13 +1,15 @@
-import { agencia } from './agencia';
+export const AVISO_VERSION = 'aviso-borrador-2026-10-29';
 
-/**
- * Borrador para revisión legal. Los marcadores entre corchetes se sustituyen
- * antes de usar este texto como aviso definitivo.
- */
 export const aviso = {
-  fechaBorrador: '2026-10-27',
+  fechaBorrador: '2026-10-29',
+  fechaVisible: '29 de octubre de 2026',
+  version: AVISO_VERSION,
   ley: 'Ley Federal de Protección de Datos Personales en Posesión de los Particulares, nueva ley publicada en el Diario Oficial de la Federación el 20 de marzo de 2025, texto vigente con la reforma publicada el 14 de noviembre de 2025.',
   leyUrl: 'https://www.diputados.gob.mx/LeyesBiblio/pdf/LFPDPPP.pdf',
+  banner: 'Borrador pendiente de aprobación de Pedro Luis Maldonado Gordillo',
+  razonSocial: '[Razón social pendiente]',
+  domicilio: '[Domicilio pendiente]',
+  correoArco: '[Correo de contacto ARCO pendiente]',
 };
 
 export type BloqueAviso = {
@@ -22,33 +24,34 @@ export const bloquesAviso: BloqueAviso[] = [
     id: 'borrador',
     titulo: 'Naturaleza de este documento',
     parrafos: [
-      'Este aviso es un borrador para revisión legal. No está vigente como aviso definitivo mientras sigan los marcadores [Responsable: pendiente], [Domicilio: pendiente] y [Correo de contacto: pendiente], y mientras una persona licenciada en derecho no lo revise.',
-      `Describe el tratamiento previsto en el sitio de ${agencia.nombre} para datos de contacto y para quienes se suscriban al boletín. No cubre expedientes clínicos. La agencia no presta servicios de salud.`,
+      'Este aviso es un borrador para revisión legal. No está vigente como aviso definitivo mientras sigan los marcadores [Razón social pendiente], [Domicilio pendiente] y [Correo de contacto ARCO pendiente], y mientras una persona licenciada en derecho no lo revise.',
+      `La versión de este borrador es ${aviso.version}. Describe el tratamiento previsto en el sitio de AVRA 360 para la conversación que una persona inicia en la pantalla principal. No cubre un archivo de prospectos: ese archivo está preparado y apagado.`,
     ],
   },
   {
     id: 'responsable',
     titulo: 'Responsable del tratamiento',
     parrafos: [
-      `Identidad: [Responsable: pendiente], con nombre comercial ${agencia.nombre}. La persona de contacto público es ${agencia.responsable}.`,
-      `Domicilio para oír y recibir notificaciones: [Domicilio: pendiente]. La agencia opera en ${agencia.ciudad}, ${agencia.estado}, ${agencia.pais}. Esa ciudad no sustituye el domicilio legal, que sigue pendiente.`,
-      'Correo para privacidad y para derechos ARCO: [Correo de contacto: pendiente]. Hasta que ese correo exista y se publique sin corchetes, las solicitudes de privacidad no tienen un buzón definitivo. El WhatsApp de la agencia sirve para conversaciones comerciales, no como canal formal de derechos ARCO.',
+      `Identidad: ${aviso.razonSocial}, con nombre comercial AVRA 360. La persona de contacto público es Pedro Luis Maldonado Gordillo.`,
+      `Domicilio para oír y recibir notificaciones: ${aviso.domicilio}. La agencia opera en Tuxtla Gutiérrez, Chiapas, México. Esa ciudad no sustituye el domicilio legal, que sigue pendiente.`,
+      `Correo para privacidad y para derechos ARCO: ${aviso.correoArco}. Hasta que ese correo exista y se publique sin corchetes, las solicitudes de privacidad no tienen un buzón definitivo.`,
     ],
   },
   {
     id: 'datos',
     titulo: 'Datos personales que se recaban',
     parrafos: [
-      'Del formulario del boletín, cuando esté conectado: nombre y correo electrónico, más la manifestación de consentimiento. Del contacto por WhatsApp o por teléfono: el número desde el que escribe o llama la persona, y lo que ella decida contar en esa conversación. Esos mensajes los recibe la aplicación de WhatsApp o la red telefónica; este sitio estático no guarda el chat.',
-      'Si más adelante se aceptan cookies de analítica, el navegador de la persona puede enviar a Google o a Meta identificadores técnicos de visita (por ejemplo, páginas vistas y un identificador de cookie). Eso solo ocurre después del consentimiento y solo si los identificadores de medición están configurados. Hoy no están configurados y no se carga ningún script de analítica.',
-      'La preferencia de consentimiento (aceptar o rechazar analítica) se guarda en el propio navegador, con localStorage, en el equipo de la persona. No se envía a un servidor de la agencia.',
+      'Si la persona escribe en el chat, el sitio trata el texto del mensaje y un identificador de la conversación generado en ese momento. No pide nombre, correo, teléfono ni otros datos de contacto. Si la persona los escribe por su cuenta, viajan dentro del mensaje.',
+      'Para limitar abusos, el sitio calcula un hash de la dirección IP y usa solo ese hash. La IP en claro no se guarda. El hash se conserva, como máximo, el tiempo de la ventana de límite (24 horas) y después se descarta.',
+      'Cloudflare Turnstile, cuando el chat esté activo, puede recibir un token de verificación y la dirección IP para distinguir a una persona de un envío automatizado. Hoy el chat está en configuración y ese script no se carga al abrir la página.',
+      `El navegador puede guardar únicamente el identificador de la conversación en localStorage, con la clave avra360.conversationId, en el equipo de la persona. Sirve para continuar el mismo hilo. No es una cookie, no se usa para medir audiencia y no se comparte con herramientas de analítica. Si el navegador bloquea localStorage, la conversación de esa visita sigue, sin recordar el identificador después.`,
     ],
   },
   {
     id: 'sensibles',
     titulo: 'Datos sensibles',
     parrafos: [
-      'No se solicitan datos personales sensibles. En particular, no se piden datos de salud, información genética, creencias, opiniones políticas ni preferencia sexual. No se deben enviar datos de pacientes, historias clínicas, estudios ni cualquier dato de una persona atendida en un consultorio.',
+      'No se solicitan datos personales sensibles. En particular, no se piden datos de salud, información genética, creencias, opiniones políticas ni preferencia sexual.',
       'Si alguien incluye ese tipo de información sin que se le pida, no forma parte de la finalidad de este sitio. La instrucción es no enviarla. Cuando exista el correo de privacidad, se podrá pedir su cancelación.',
     ],
   },
@@ -56,29 +59,28 @@ export const bloquesAviso: BloqueAviso[] = [
     id: 'finalidades',
     titulo: 'Finalidades',
     parrafos: [
-      'Finalidades que se desprenden de la solicitud que la persona inicia: responder un mensaje de WhatsApp o una llamada sobre los servicios de la agencia. En la medida en que exista una relación jurídica pedida por la persona titular, el artículo 9 de la ley prevé supuestos en los que no se requiere un consentimiento adicional. La revisión legal debe confirmar cómo aplica eso a cada canal.',
-      'Finalidades que sí requieren consentimiento de la persona titular: enviar el boletín, una vez al mes, al correo que ella anote, y —solo si se configuran las herramientas y ella acepta— medir la audiencia del sitio con Google Analytics 4 y con el píxel de Meta.',
-      'No usamos los datos para vender bases, para perfilar estado de salud ni para publicidad de tratamientos. No hay finalidades secundarias de mercadeo de terceros.',
+      'La finalidad es responder, dentro del chat, a la idea que la persona escribe: una marca, una campaña, un presupuesto u otra solicitud relacionada con los servicios de AVRA 360. La respuesta la produce AVRA, el asistente de la agencia. Las instrucciones de AVRA viven en su perfil y no en el código de este sitio.',
+      'También se trata el hash de la IP para aplicar un límite de mensajes, y el token de Turnstile para verificar el envío cuando el chat esté activo.',
+      'No hay finalidades de analítica, de boletín, de publicidad de terceros ni de venta de bases de datos. El sitio no accede a Google Calendar. Si en una conversación se habla de una cita, la agenda la lleva AVRA desde su perfil, no este sitio.',
     ],
   },
   {
     id: 'consentimiento-tratamiento',
     titulo: 'Consentimiento',
     parrafos: [
-      'El boletín pide consentimiento expreso mediante una casilla que no viene marcada. Sin esa casilla no hay suscripción. La persona puede negarse sin que eso impida llamar o escribir por WhatsApp.',
-      'La analítica pide una decisión distinta: aceptar o rechazar. El rechazo no bloquea el sitio. Mientras no haya identificadores configurados, aceptar tampoco instala Google Analytics ni el píxel de Meta.',
-      'El consentimiento puede revocarse en cualquier momento, sin efectos retroactivos, como prevé el artículo 7 de la ley. El mecanismo previsto es un escrito al correo [Correo de contacto: pendiente]. Para el boletín, la baja también se podrá pedir por el enlace que incluye el correo de confirmación y cada envío.',
+      'Escribir en el chat es un acto de la persona. Mientras este aviso siga en borrador y el archivo de conversaciones esté apagado, el mensaje solo se retransmite para obtener la respuesta y se borra de forma automática a las 24 horas. No se pide un consentimiento de archivo porque no hay archivo.',
+      `Cuando el aviso definitivo esté aprobado, un registro de consentimiento podrá guardarse con esta versión del aviso, o con la versión que entonces se publique. Sin ese aviso aprobado y sin el consentimiento de la persona, no se persiste nada más allá de la retransmisión transitoria. La versión de este borrador es ${aviso.version}.`,
+      `El consentimiento, cuando exista, podrá revocarse sin efectos retroactivos, como prevé el artículo 7 de la ley. El mecanismo previsto es un escrito a ${aviso.correoArco}.`,
     ],
   },
   {
     id: 'limitar',
     titulo: 'Opciones para limitar el uso o la divulgación',
     lista: [
-      'No marcar la casilla del boletín.',
-      'Elegir “Rechazar” en las cookies de analítica, o volver a abrir “Preferencias de cookies” en el pie y cambiar la decisión.',
-      'No enviar datos clínicos ni de terceros.',
-      'Pedir la limitación o la baja en [Correo de contacto: pendiente] cuando ese correo esté activo.',
-      'Dejar de escribir por WhatsApp. La conversación que ya esté en esa aplicación se rige también por el aviso de su proveedor.',
+      'No escribir en el chat.',
+      'No incluir datos de contacto ni datos de terceros en el mensaje.',
+      'Borrar avra360.conversationId en el almacenamiento local del navegador.',
+      `Pedir la limitación en ${aviso.correoArco} cuando ese correo esté activo.`,
     ],
   },
   {
@@ -86,7 +88,7 @@ export const bloquesAviso: BloqueAviso[] = [
     titulo: 'Derechos ARCO y revocación',
     parrafos: [
       'La persona titular, o su representante, puede pedir acceso, rectificación, cancelación u oposición respecto de los datos que estén en posesión del responsable. El ejercicio de un derecho no impide ejercer otro, conforme al artículo 21.',
-      'La solicitud se envía a [Correo de contacto: pendiente] e incluye: nombre de la persona titular, una forma de acreditar su identidad (y la representación, si aplica), la descripción clara del derecho que quiere ejercer y los datos para recibir la respuesta. En una rectificación conviene indicar el dato correcto y, si hace falta, un documento de apoyo. El medio para entregar el acceso será una copia electrónica, salvo que la persona pida otro medio razonable.',
+      `La solicitud se envía a ${aviso.correoArco} e incluye: nombre de la persona titular, una forma de acreditar su identidad (y la representación, si aplica), la descripción clara del derecho que quiere ejercer y los datos para recibir la respuesta. En una rectificación conviene indicar el dato correcto y, si hace falta, un documento de apoyo. El medio para entregar el acceso será una copia electrónica, salvo que la persona pida otro medio razonable.`,
       'Conforme al artículo 31, el responsable comunicará la determinación en un plazo máximo de veinte días hábiles contados desde que reciba la solicitud, y la hará efectiva, si procede, dentro de los quince días hábiles siguientes a esa comunicación. El artículo 34 prevé que el ejercicio es gratuito; solo pueden cobrarse los costos de reproducción, copias o envío.',
       'Si la persona considera que la respuesta no atiende su solicitud, o si no hay respuesta, puede presentar una solicitud de protección de datos ante la Secretaría Anticorrupción y Buen Gobierno. El artículo 40 da un plazo de quince días hábiles siguientes a la fecha en que el responsable comunique su respuesta. La revisión legal debe confirmar el conducto vigente de esa Secretaría antes de publicar este aviso como definitivo.',
     ],
@@ -96,27 +98,25 @@ export const bloquesAviso: BloqueAviso[] = [
     titulo: 'Transferencias y personas encargadas',
     parrafos: [
       'No se venden datos personales ni se ceden para publicidad de terceros.',
-      'Resend, cuando se contrate la cuenta y el dominio de envío esté verificado, trataría nombre y correo por cuenta de la agencia para enviar el boletín: sería persona encargada, no una cesión para fines propios. Hoy no hay dominio verificado y el formulario del sitio está desactivado, así que no hay envío. Al conectarlo se indicará aquí la relación y se le comunicará el aviso y las finalidades, como corresponde frente a quien trata datos por cuenta del responsable.',
-      'Al pulsar WhatsApp, la persona sale hacia el servicio de Meta con su propio aviso. Al llamar, usa la red de su operador. Esos actos los inicia la persona.',
-      'El hospedaje del sitio todavía no está contratado. Cuando se elija, se nombrará aquí como persona encargada de la infraestructura: [PROVEEDOR DE HOSPEDAJE]. Un proveedor de hospedaje puede tratar registros técnicos de conexión, como la dirección IP, para operar y asegurar el servicio.',
+      'Cloudflare hospeda el sitio (Workers y Durable Objects) y, cuando el chat esté activo, opera Turnstile. Trata datos técnicos de conexión para servir el sitio, limitar abusos y verificar el envío. Es persona encargada de la infraestructura. El hash de la IP y la conversación transitoria viven en esa infraestructura y se borran como se indica en conservación.',
+      'Para generar la respuesta, el mensaje, los últimos turnos de esa conversación y el identificador se envían a AVRA mediante un webhook de Cursor (https://api2.cursor.sh). Cursor actúa como encargado de esa retransmisión. La llamada despierta a AVRA y no devuelve la respuesta; AVRA la entrega después, en un canal firmado y de un solo uso, al propio sitio. Este código no contiene instrucciones de personalidad de AVRA.',
       'No hay otras transferencias previstas. Si en el futuro se necesitara una transferencia que requiera consentimiento, se pedirá de forma expresa y se actualizará este aviso, conforme al artículo 35. El artículo 36 lista supuestos estrechos en los que una transferencia puede ocurrir sin consentimiento; no son el plan de este sitio.',
     ],
   },
   {
     id: 'cookies',
-    titulo: 'Cookies y analítica',
+    titulo: 'Cookies, almacenamiento local y analítica',
     parrafos: [
-      'El sitio se puede usar sin cookies de analítica. No hay cookies necesarias de sesión: es un sitio estático.',
-      'Google Analytics 4 y el píxel de Meta quedan preparados en la configuración y apagados. Solo se insertan sus scripts si existen identificadores públicos y la persona pulsa “Aceptar analítica”. Esos identificadores no son la API key de ningún servicio. La API key de Resend no se usa en el sitio y no debe colocarse en el código ni en variables públicas.',
-      'Rechazar la analítica deja el sitio igual de usable. La decisión se recuerda en ese navegador hasta que la persona la cambie desde “Preferencias de cookies”.',
+      'No hay cookies de analítica ni de terceros. No se usa Google Analytics ni el píxel de Meta. No hay banner de cookies porque no hay medición que aceptar o rechazar.',
+      'El único dato que el sitio escribe en el navegador es avra360.conversationId en localStorage, y solo después de que el chat activo acepte un mensaje. En la vista en configuración no se escribe.',
     ],
   },
   {
     id: 'seguridad',
     titulo: 'Seguridad y vulneraciones',
     parrafos: [
-      'El artículo 18 pide medidas de seguridad administrativas, técnicas y físicas acordes al riesgo. En este sitio el riesgo previsto es el de una lista de nombres y correos, no el de un expediente clínico. Las medidas mínimas previstas son: no publicar bases de datos en el repositorio, no poner secretos en el código, limitar quién administra Resend cuando exista, y no guardar la lista de suscriptores en el repositorio.',
-      'Si una vulneración afectara de forma significativa los derechos patrimoniales o morales de las personas titulares, el artículo 19 prevé informarles de forma inmediata. El canal previsto para ese aviso es [Correo de contacto: pendiente] y, si hiciera falta un aviso más amplio, esta misma página.',
+      'El artículo 18 pide medidas de seguridad administrativas, técnicas y físicas acordes al riesgo. Las medidas previstas son: no publicar secretos en el repositorio, firmar y caducar a los 15 minutos el token con el que AVRA devuelve la respuesta, usarlo una sola vez, limitar la longitud de los mensajes, no interpretar el texto como HTML, y borrar la conversación transitoria a las 24 horas.',
+      `Si una vulneración afectara de forma significativa los derechos patrimoniales o morales de las personas titulares, el artículo 19 prevé informarles de forma inmediata. El canal previsto para ese aviso es ${aviso.correoArco} y, si hiciera falta un aviso más amplio, esta misma página.`,
       'Quien intervenga en el tratamiento debe guardar confidencialidad, también después de terminar su relación con el responsable, conforme al artículo 20.',
     ],
   },
@@ -124,8 +124,9 @@ export const bloquesAviso: BloqueAviso[] = [
     id: 'conservacion',
     titulo: 'Conservación',
     parrafos: [
-      'Los datos del boletín se conservan mientras la persona quiera recibirlo y la finalidad siga vigente. Al pedir la baja, se dejan de usar para nuevos envíos. Si deben permanecer bloqueados para atender responsabilidades y después suprimirse, se seguirá el artículo 11: bloqueo y, cumplido el plazo, cancelación.',
-      'Los mensajes de WhatsApp permanecen en esa aplicación según la configuración de cada persona y las condiciones de Meta. Este sitio no tiene una copia.',
+      'La conversación que se usa para retransmitir el mensaje se guarda en un Durable Object solo para ese fin. Una alarma la borra a las 24 horas. No es un expediente de prospecto.',
+      'El archivo de conversaciones y el registro de prospectos están preparados en el código y apagados. No se encienden sin el aviso definitivo aprobado, sin el consentimiento de la persona y sin un almacén enlazado a propósito. Hoy no hay ese almacén enlazado.',
+      'El hash de la IP se conserva como máximo 24 horas, que es la ventana del límite de mensajes.',
     ],
   },
   {
@@ -133,7 +134,7 @@ export const bloquesAviso: BloqueAviso[] = [
     titulo: 'Cambios a este aviso',
     parrafos: [
       'Los cambios se publicarán en esta misma página, que es el procedimiento previsto por el artículo 15, fracción VI. La fecha visible al inicio se actualizará. Si el cambio exige un nuevo consentimiento —por ejemplo, una finalidad distinta—, no se aplicará a los datos ya recabados hasta obtenerlo, conforme al artículo 11.',
-      'Si un dato no se obtuvo directamente de la persona y hubiera que informarle un cambio, se observará el artículo 17. No es el caso previsto para el boletín ni para el contacto, que los entrega la propia persona.',
+      'Si un dato no se obtuvo directamente de la persona y hubiera que informarle un cambio, se observará el artículo 17. No es el caso previsto para el chat, cuyo mensaje lo escribe la propia persona.',
     ],
   },
   {
@@ -141,7 +142,7 @@ export const bloquesAviso: BloqueAviso[] = [
     titulo: 'Autoridad y quejas',
     parrafos: [
       'La ley vigente encomienda a la Secretaría Anticorrupción y Buen Gobierno difundir y vigilar la protección de datos personales en posesión de los particulares. Además de los derechos ARCO ante el responsable, la persona puede acudir a esa Secretaría en los términos de los artículos 38 y siguientes.',
-      'Este borrador no es asesoría legal para otras clínicas ni un modelo para que un consultorio lo copie en su propio aviso. Cada responsable tiene que informar su propio tratamiento.',
+      'Este borrador no es asesoría legal para otras personas ni un modelo para copiarlo. Cada responsable tiene que informar su propio tratamiento.',
     ],
   },
 ];

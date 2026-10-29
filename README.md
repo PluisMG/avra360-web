@@ -1,279 +1,59 @@
-# MKT Creativa
+# AVRA 360
 
-Sitio estático de MKT Creativa, agencia de marketing y publicidad de Pedro Luis Maldonado Gordillo en Tuxtla Gutiérrez, Chiapas. El contenido está en español de México.
+Pantalla conversacional de vista previa. El sitio público es `/`, `/aviso-de-privacidad` y el 404. El chat habla con **AVRA**, un agente de Grok Bot. Las instrucciones de AVRA viven en su perfil: este repositorio no trae prompt de sistema ni personalidad.
 
-Los textos de marketing son los de Creativo, del 26 de octubre de 2026. El aviso de privacidad se publica como borrador, con noindex, hasta la aprobación de Pedro Luis Maldonado Gordillo.
+No despliega, no toca DNS y no publica. El paquete para subir con la API de Cloudflare queda en el Agent Store: `worker.mjs`, `worker-config.json` y `dist.tar.gz` (compilado con `PREVIEW=1`).
 
-## Requisitos
-
-- Node.js 22.23.4 o superior
-- npm
-
-## Desarrollo y build
+## Desarrollo
 
 ```bash
-npm install
-npm run dev
 npm run build
+npm test
+npm run test:e2e
 npm run preview
-npm run check
-npm run verificar
 ```
 
-`npm run build` genera la carpeta `dist/`, lista para un hospedaje estático. No despliega nada y no toca DNS.
+`npm run build` deja el cliente en `public/chat.js` y el sitio en `dist/`. Inter se autoaloja en woff2, subset latino, con `font-display: swap`. No hay Google Fonts en tiempo de ejecución.
 
-`npm run verificar` revisa, sobre `dist/`, que cada página tenga un solo `h1`, título, descripción, Open Graph y JSON-LD que se pueda leer, y que los enlaces internos, anclas, teléfono y WhatsApp coincidan con lo construido. También falla si el HTML público contiene un marcador (`[Pendiente`, `[RAZÓN`, `[DOMICILIO`, `[CORREO`), `POR CONFIRMAR`, `{{` o `PROVISIONAL`, o si afirma cumplimiento de COFEPRIS (`cumple con COFEPRIS`, `sin problemas con COFEPRIS`, `conformes a COFEPRIS`, `garantizado`, `agenda llena`, `blindaje`, `0 % riesgo`, `100 % conforme`). El propio `npm run build` se detiene con la misma revisión. El caso de MentalCareClinic no puede incluir imágenes.
+## Chat
 
-## Dónde se edita el contenido
+`POST /api/chat` responde `{ status: "configurando" }` con 503 salvo que se cumplan todas estas condiciones:
 
-| Qué | Archivo |
-| --- | --- |
-| Nombre, teléfono, WhatsApp y ciudad | `src/config/agencia.ts` |
-| Textos de las páginas fijas y mensajes de cada pantalla | `src/config/textos.ts` |
-| Páginas que solo existen si hay archivo | `src/content/paginas/<slug>.md` |
-| Catálogo de slugs aprobados | `src/config/paginas.ts` |
-| Logo, favicons | `src/brand/logo.ts` |
-| Acento | `--acento` y `--acento-hover` en `src/styles/global.css` |
-| Aviso de privacidad (borrador, noindex) | `src/config/aviso.ts` y `src/pages/aviso-de-privacidad.astro` |
-| Ediciones del boletín | `src/content/boletin/*.md` |
-| Precios (apagados) | `mostrarPrecios` y `precios` en `src/config/agencia.ts` |
+| Nombre | Dónde | Valor para encender el chat |
+| --- | --- | --- |
+| `CHAT_ACTIVO` | variable | exactamente `"1"` |
+| `PUBLIC_TURNSTILE_SITE_KEY` | variable | site key pública de Turnstile |
+| `AVRA_WEBHOOK_URL` | secret | URL `https` del webhook de routine |
+| `AVRA_WEBHOOK_KEY` | secret | la misma llave en `Authorization: Bearer` y `X-Automation-Key` |
+| `AVRA_REPLY_SIGNING_SECRET` | secret | HMAC del `replyToken` |
+| `TURNSTILE_SECRET_KEY` | secret | secret de Siteverify |
 
-No invente clientes, logotipos de terceros, cifras, testimonios ni datos de pacientes. El repositorio es público: no suba claves, tokens ni identificadores privados.
+El webhook es un POST, cuerpo JSON, timeout de 8 segundos y un solo intento. Responde 200 cuando AVRA despierta y no trae la respuesta. AVRA devuelve `{ replyToken, text }` a `POST /api/chat/reply`. El visitante la recibe en `GET /api/chat/:conversationId/events`, con sondeo cada 2 segundos y backoff. A los 3 minutos la interfaz dice: «AVRA está tardando más de lo normal».
 
-## Cloudflare Pages
+La conversación vive en el Durable Object `Conversation` solo para retransmitir. Una alarma la borra a las 24 horas. La IP no se guarda: `RateLimiter` usa su hash (10 mensajes cada 10 minutos y 40 al día).
 
-Cuando se decida publicar, el proyecto estático se puede conectar a Cloudflare Pages con:
+Mientras falte algo de la tabla, la caja sigue visible y dice: «El chat con AVRA está en configuración. Muy pronto podrás conversar aquí.» No se simula una respuesta.
 
-- Comando de build: `npm run build`
-- Directorio de salida: `dist`
-- Node.js 22
+## Almacenamiento, apagado
 
-El build escribe `dist/_headers` (seguridad, HSTS y caché de assets) y copia `public/_redirects`. Esas redirecciones responden 301 a la forma canónica: `/index.html` va a `/`, las rutas con barra final pierden la barra, y `/sitemap.xml` apunta a `sitemap-index.xml`. `wrangler.jsonc` deja `assets.html_handling` en `drop-trailing-slash` y la 404 en `not_found_handling`. Ese archivo no despliega nada: no ejecute `wrangler deploy` desde este repositorio.
+`LeadStore` y `ConversationArchive` tienen adaptadores para D1 y KV. Ninguno está enlazado en `wrangler.jsonc`. `ALMACENAMIENTO_ACTIVO` y `AVISO_APROBADO` solo se encienden con `"1"`. Sin aviso aprobado y sin consentimiento no se persiste nada más allá de la retransmisión. La versión del borrador es `aviso-borrador-2026-10-29`.
 
-Variables útiles en el panel, ninguna de ellas es secreta:
+Para activarlo más adelante:
 
-- `SITE` — URL canónica https del dominio propio. **El lanzamiento la exige.** Hay que compilar con `SITE=https://el-dominio-real` y sin `PREVIEW`. Si no se define, el build usa `https://mktcreativa.example`, un marcador que no puede publicarse.
-- `PREVIEW` — `1` para un build de vista previa.
-- `PUBLIC_MOSTRAR_EDICION_EJEMPLO`
-- `BOLETIN_ACTIVO` — déjela sin definir. Solo `1` muestra el formulario del boletín listo para enviar. No es un secreto.
-- `PUBLIC_GA4_ID`
-- `PUBLIC_META_PIXEL_ID`
-- `CSP_REPORT_URL` — déjela sin definir. No hay recolector. Si más adelante existe una URL https del propio recolector, el build añade `report-uri`, `report-to` y `Reporting-Endpoints`. Sin esa variable, esos encabezados no se emiten. No invente un endpoint y no ponga un secreto: la URL queda publicada en la CSP.
+1. Sustituir este borrador por el aviso definitivo, sin corchetes, y publicar esa página.
+2. Poner `AVISO_APROBADO` en `"1"`.
+3. Enlazar D1 o KV y crear las tablas o las claves que esperan `AdaptadorD1` y `AdaptadorKv` en `worker/almacenamiento.ts`.
+4. Pedir consentimiento expreso ligado a la versión del aviso.
+5. Solo entonces poner `ALMACENAMIENTO_ACTIVO` en `"1"`.
 
-No cree variables públicas para `RESEND_API_KEY`, `RESEND_AUDIENCE_ID`, `BOLETIN_FROM` ni `BOLETIN_SIGNING_SECRET`. Son secrets del Worker.
+Hoy `POST /api/chat` llama al archivo con consentimiento en falso, así que no escribe.
+
+## Calendario
+
+Este Worker no integra Google Calendar ni guarda credenciales de calendario. Si una conversación necesita una cita, la agenda la hace AVRA desde su perfil.
 
 ## Vista previa
 
-Con `PREVIEW=1 npm run build`:
+Con `PREVIEW=1` (es el valor de `wrangler.jsonc` y del `dist.tar.gz`) todas las respuestas llevan `X-Robots-Tag: noindex, nofollow` y `robots.txt` responde `Disallow: /`. `/aviso-de-privacidad` también lleva `noindex` en el HTML. Los encabezados de seguridad, incluida la CSP y HSTS, salen del Worker también en los 301 y en el 404.
 
-- cada página lleva `<meta name="robots" content="noindex, nofollow">`
-- `robots.txt` queda en `Disallow: /` y no publica el sitemap
-
-Sirve para un enlace de revisión. No use ese build como sitio indexable.
-
-## Boletín
-
-Cada edición es un Markdown en `src/content/boletin/`. El esquema está en `src/content.config.ts` y el build falla si no se cumple. El boletín se publica **una vez al mes**. La fecha puede ser cualquier día civil válido, en formato `AAAA-MM-DD`.
-
-### Cómo agregar una edición
-
-1. Cree `src/content/boletin/AAAA-MM-DD.md`. Use cualquier día del mes. No use el prefijo `ejemplo-`: está reservado para la edición de muestra.
-2. Copie este frontmatter y sustituya los textos:
-
-```yaml
----
-titulo: "Título de la edición, con al menos doce caracteres"
-fecha: "2026-11-03"
-tema: "Tema principal de la edición"
-descripcion: "Resumen de 50 a 160 caracteres para la ficha, el RSS y la meta descripción."
-ejemplo: false
-# slug: maps-para-consultorios
-# modificado: "2026-11-04"
-# autor: "Nombre, solo si no es Pedro Luis Maldonado Gordillo"
-# palabras: ["Google Maps", "consultorios"]
-# fuentes:
-#   - https://www.gob.mx/cofepris
-# sufijo: false
-notas:
-  - titulo: "Primera nota"
-    texto: "Texto breve de la nota, de al menos cuarenta caracteres, sin cifras inventadas."
-  - titulo: "Segunda nota"
-    texto: "Otra nota breve. Puede haber una tercera, no más."
-llamado:
-  texto: "Una sola acción concreta para quien termina de leer."
-  enlace: /contacto
-  etiqueta: Escribir a la agencia
----
-```
-
-3. Debajo del frontmatter puede ir el cuerpo en Markdown. No use un `h1`: la página ya lo pone con el título. Empiece en `h2` si necesita subtítulos.
-4. `enlace` del llamado es una ruta del sitio (`/contacto`) o una URL `https`.
-5. Ejecute `npm run build`. Si falta una nota, la fecha no existe o la descripción se pasa de largo, el build se detiene y dice por qué.
-
-La portada del boletín lista las ediciones por fecha, de la más nueva a la más antigua. Cada una vive en `/boletin/[slug]`. El RSS está en `/boletin/rss.xml`.
-
-### Edición de ejemplo
-
-`src/content/boletin/ejemplo-2026-10-15.md` está marcada con `ejemplo: true` y en la página se ve como ejemplo. No es una edición publicada.
-
-- Sin variable, `npm run dev` la muestra y `npm run build` la omite.
-- `PUBLIC_MOSTRAR_EDICION_EJEMPLO=1` la incluye también en el build.
-- `PUBLIC_MOSTRAR_EDICION_EJEMPLO=0` la oculta incluso en desarrollo.
-
-Aunque se muestre, esa página lleva `noindex` y no entra al sitemap. Quítela del repositorio cuando ya no haga falta como muestra.
-
-## Suscripción con Resend
-
-MailerLite ya no se usa. El formulario, en `/boletin` y en el pie, hace `POST /api/boletin/suscribir` en el mismo sitio. La CSP deja `form-action 'self'` y no abre ningún dominio de correo.
-
-Hoy el formulario se ve desactivado, con el texto de Creativo: «La suscripción al boletín estará disponible pronto. Mientras tanto, puede escribirnos por WhatsApp.»
-
-El Worker (`worker/index.ts`, configurado en `wrangler.jsonc`) atiende `/api/boletin/*` y deja el resto de las rutas a los archivos de `dist/`. No ejecute `wrangler deploy` desde este repositorio.
-
-### Cuándo se enciende
-
-Hacen falta las dos cosas. Aún no hay dominio verificado en Resend, así que no se configuran todavía.
-
-1. Compilar el sitio con `BOLETIN_ACTIVO=1`. Si no es exactamente `1`, el formulario queda deshabilitado.
-2. En el Worker, la variable `BOLETIN_ACTIVO` también en `1`, y estos secrets (sin valor en el repo, sin `.env` y sin `wrangler.jsonc`):
-
-```bash
-wrangler secret put RESEND_API_KEY
-wrangler secret put RESEND_AUDIENCE_ID
-wrangler secret put BOLETIN_FROM
-wrangler secret put BOLETIN_SIGNING_SECRET
-```
-
-`RESEND_AUDIENCE_ID` es el id del segmento de Resend (antes, audiencia). `BOLETIN_FROM` es la dirección del remitente; el nombre visible del correo es «MKT Creativa». `BOLETIN_SIGNING_SECRET` firma los enlaces; use al menos 16 caracteres al azar. Si falta cualquiera, o si `BOLETIN_ACTIVO` no es `1`, `POST /api/boletin/suscribir` responde 503.
-
-El correo de confirmación enlaza al aviso de privacidad solo si `BOLETIN_AVISO_URL` es una URL https o una ruta del sitio. Esa variable no es un secreto y hoy no se define: el aviso de privacidad no es una página definitiva del build, y el correo se envía igual, sin ese enlace. Cuando la página esté publicada, se pone la URL y el correo dice «Consulte nuestro aviso de privacidad.»
-
-### Doble opt-in y baja
-
-`POST /api/boletin/suscribir` valida el correo, exige la casilla de consentimiento y revisa el campo oculto `empresa_web`. Si ese campo viene lleno, responde 200 y no llama a Resend. Hay un límite simple de 5 solicitudes cada 10 minutos por IP, en memoria del isolate: no crea KV.
-
-Si todo es válido, firma con HMAC-SHA256 un token de confirmación que vence a las 48 horas y otro de baja que vence a los 400 días. Resend envía el correo con:
-
-- `GET /api/boletin/confirmar?token=...` — solo entonces crea o actualiza el contacto en el segmento, con `unsubscribed: false`.
-- `GET /api/boletin/baja?token=...` — también acepta POST. Marca `unsubscribed: true`.
-
-Cada envío del boletín debe incluir un enlace de baja nuevo, firmado igual (`uso: "baja"`, el mismo secret, vencimiento de unos 400 días). El correo de confirmación ya lo trae.
-
-### Consentimiento en el contacto
-
-Al confirmar, el contacto recibe estas propiedades de Resend, todas en texto:
-
-- `consentimiento_solicitado` y `consentimiento_confirmado` (fecha y hora ISO)
-- `consentimiento_version` (`boletin-2026-10-29`) y `consentimiento_texto`
-- `ip_hash` (SHA-256 de la IP, recortado; no se guarda la IP completa)
-- `origen` (ruta del sitio, por ejemplo `/boletin`)
-
-Hay que crear esas propiedades en Resend antes de activar el formulario. Este repositorio no las crea y no crea un namespace KV. Si Resend no aceptara propiedades, la alternativa sería un KV `CONSENTIMIENTOS` con la misma ficha por correo; no está aprovisionado.
-
-El campo oculto del formulario sigue fuera de pantalla, con `tabindex="-1"`, `autocomplete="off"` y `aria-hidden` en su contenedor.
-
-## Precios
-
-En `src/config/agencia.ts`, `mostrarPrecios` está en `false`. `/servicios` muestra el bloque de inversión desactivado y sin montos. Para publicarlos, pase el indicador a `true` y llene `precios` con los montos ya aprobados. No deje cifras de ejemplo.
-
-## Analítica
-
-`PUBLIC_GA4_ID` (formato `G-…`) y `PUBLIC_META_PIXEL_ID` (solo dígitos) se leen en el build. El script `public/scripts/consentimiento.js` los inserta **solo** si existen y la persona pulsa «Aceptar analítica». La decisión se guarda en el navegador. «Rechazar» no carga nada y borra las cookies `_ga`, `_ga_*` y `_fbp` del dominio actual y del dominio padre. Sin identificadores, aceptar tampoco carga nada.
-
-Con el consentimiento aceptado, un clic en `wa.me` envía `contacto_whatsapp` y un clic en `tel:` envía `contacto_llamada`. Los dos van a GA4 si hay identificador. Si el píxel está configurado, los dos salen además como evento `Contact`. Sin consentimiento no se envía nada.
-
-«Preferencias de cookies», en el pie, es un botón: vuelve a mostrar el aviso y no cambia la URL.
-
-## Aviso de privacidad
-
-El borrador sigue en el repositorio (`src/config/aviso.ts` y `src/borradores/aviso-de-privacidad.astro`), alineado a la LFPDPPP publicada en el DOF el 20 de marzo de 2025 (texto con la reforma del 14 de noviembre de 2025). **No se genera** `/aviso-de-privacidad`, no entra al sitemap y ninguna página pública lo enlaza.
-
-Para volver a publicarlo hacen falta la razón social, el domicilio, el correo de privacidad, el horario, el proveedor de hospedaje y la revisión legal. Hasta entonces el formulario del boletín permanece desactivado. No deje marcadores en el HTML.
-
-## Páginas que solo existen con archivo
-
-Servicios, guías y «Nosotros» no se publican vacíos. El build genera la ruta solo si existe `src/content/paginas/<slug>.md`. Sin ese archivo, la página no entra al menú, al pie, al sitemap ni a ningún enlace.
-
-El slug tiene que estar en `src/config/paginas.ts`. Un archivo con otro slug detiene el build. El nombre del archivo y la clave `slug` tienen que coincidir, y el cuerpo no puede ir vacío.
-
-Claves del frontmatter, en todas:
-
-| Clave | Uso |
-| --- | --- |
-| `slug` | Igual al nombre del archivo, sin `.md` |
-| `tipo` | `servicio`, `guia` o `nosotros` |
-| `titulo` | Título SEO, sin « \| MKT Creativa». En contacto el layout ya no añade el sufijo; en estas páginas sí |
-| `descripcion` | Meta descripción, de 50 a 180 caracteres |
-| `h1` | Único título visible |
-| `sufijo` | Opcional. Por defecto la plantilla añade « \| MKT Creativa». `/guias/cofepris` no la añade: es la guía pilar y su título ya viene cerrado. También va en `false` en `aviso-o-permiso-de-publicidad-cofepris`, `publicidad-en-redes-sociales-cofepris` y `checklist-publicidad-cofepris` |
-
-El cuerpo es Markdown, sin `h1` (la plantilla ya lo pone). Las páginas de servicio enlazan a la guía `/guias/cofepris` si ese archivo existe, al caso y a WhatsApp. La guía enlaza al servicio de publicidad si existe, al boletín y a WhatsApp.
-
-Slugs aprobados y, cuando Creativo escriba el archivo, el título y la meta que corresponden:
-
-| Archivo | `tipo` | Ruta | Título SEO | Meta |
-| --- | --- | --- | --- | --- |
-| `paginas-web-para-medicos.md` | `servicio` | `/servicios/paginas-web-para-medicos` | Páginas web para médicos y consultorios | Sitio rápido para su consultorio o clínica en Chiapas: servicios, cédula, ubicación, WhatsApp y aviso de privacidad, con textos revisados contra el reglamento. |
-| `seo-local-google-maps.md` | `servicio` | `/servicios/seo-local-google-maps` | SEO local y Google Maps para consultorios | Que su consultorio aparezca en Google Maps en Tuxtla, Tapachula o San Cristóbal: perfil de empresa, reseñas y datos coherentes. Sin prometer el primer lugar. |
-| `publicidad-medica-cofepris.md` | `servicio` | `/servicios/publicidad-medica-cofepris` | Publicidad médica y COFEPRIS para consultorios | Revisamos sus anuncios, redes y sitio contra el Reglamento de Publicidad y le decimos si necesita aviso o permiso de COFEPRIS. No sustituye a un abogado. |
-| `marketing-para-psicologos.md` | `servicio` | `/servicios/marketing-para-psicologos` | Marketing para psicólogos en Chiapas | Marketing ético para psicólogos, psiquiatras y clínicas de salud mental en Chiapas: sitio, Google Maps y contenido sin promesas ni datos de pacientes. |
-| `diagnostico-digital.md` | `servicio` | `/servicios/diagnostico-digital` | Diagnóstico digital para consultorios | Revisamos su ficha de Google, sitio, Doctoralia y anuncios, y le entregamos 10 prioridades con los riesgos COFEPRIS señalados. |
-| `cofepris.md` | `guia` | `/guias/cofepris` | ¿Aviso o permiso de publicidad COFEPRIS? Guía para médicos | Cuándo basta el aviso de publicidad y cuándo se necesita permiso de COFEPRIS, qué cuesta y qué datos lleva, explicado para consultorios y clínicas. |
-| `aviso-o-permiso-de-publicidad-cofepris.md` | `guia` | `/guias/aviso-o-permiso-de-publicidad-cofepris` | ¿Aviso o permiso de publicidad COFEPRIS? Guía para médicos | Cuándo basta el aviso de publicidad y cuándo se necesita permiso de COFEPRIS, qué cuesta y qué datos lleva, explicado para consultorios y clínicas. |
-| `publicidad-en-redes-sociales-cofepris.md` | `guia` | `/guias/publicidad-en-redes-sociales-cofepris` | Publicidad médica en redes sociales y COFEPRIS: qué revisar | Qué puede publicar un médico o psicólogo en Facebook e Instagram, qué requiere aviso de COFEPRIS y qué frases evitar. Lista de revisión con fuentes. |
-| `checklist-publicidad-cofepris.md` | `guia` | `/guias/checklist-publicidad-cofepris` | Checklist de publicidad COFEPRIS para consultorios | Lista de verificación antes de publicar un anuncio de salud: cédula, aviso o permiso, promesas, testimonios, precios y datos de pacientes. |
-| `nosotros.md` | `nosotros` | `/nosotros` | Nosotros: marketing de salud en Chiapas | MKT Creativa, la agencia de Pedro Luis Maldonado Gordillo en Tuxtla Gutiérrez: marketing para clínicas con criterio COFEPRIS y énfasis en salud mental. |
-
-Esas páginas todavía no tienen texto aprobado. En este build no hay archivo en `src/content/paginas/`, así que no existen la ruta, el menú, el sitemap ni el enlace. No copie un borrador para llenarlas. Las tarjetas del inicio y de `/servicios` usan `/servicios/{slug}` solo cuando el archivo ya se construye; si no, siguen en el ancla de `/servicios` (`#estrategia`, `#sitio-web`, `#seo-local`, `#contenido-cofepris`).
-
-`/guias/cofepris` es la guía pilar, no el índice. Cuando exista el archivo, el layout usa el título y la meta de la tabla y `sufijo={false}` en `Base`, aunque el frontmatter traiga el título del hub.
-
-Ejemplo mínimo:
-
-```yaml
----
-slug: marketing-para-psicologos
-tipo: servicio
-titulo: "Marketing para psicólogos en Chiapas"
-descripcion: "Marketing ético para psicólogos, psiquiatras y clínicas de salud mental en Chiapas: sitio, Google Maps y contenido sin promesas ni datos de pacientes."
-h1: "Marketing para psicólogos y clínicas de salud mental"
----
-
-El cuerpo lo escribe Creativo. Sin este archivo, la ruta no existe.
-```
-
-El menú arma «Servicios» como submenú solo con las páginas de servicio cuyo archivo existe, más «Todos los servicios». «Guías COFEPRIS» aparece solo si existe `cofepris.md`. «Nosotros» aparece solo si existe `nosotros.md`. El pie enlaza la guía, no cada servicio. No hay landings de Tapachula ni de San Cristóbal.
-
-## SEO
-
-El dominio canónico sale de la variable `SITE`. **Publicar el sitio exige compilar con `SITE` en el dominio real y sin `PREVIEW`.** Si no está definida, el build usa `https://mktcreativa.example` y ese valor no puede quedarse en el lanzamiento. Canonical, `og:url`, sitemap, RSS y JSON-LD usan ese origen.
-
-Cada página tiene título y meta descripción propios, un solo `h1`, Open Graph y canónica. El JSON-LD de todo el sitio es un `@graph` con `ProfessionalService`, `Person` y `WebSite`. Cada edición del boletín añade `Article` y `BreadcrumbList`, con `og:type=article`. El teléfono publicado es +52 961 191 9199. No hay razón social, domicilio, horario, correo, precios, `sameAs` ni coordenadas: si un dato no está confirmado, la propiedad no se escribe. El logo del schema es `/logo-512.png`.
-
-La CSP lista `strict-dynamic` y un hash `sha256` por cada bloque JSON-LD distinto, dentro de `<script type="application/ld+json">`, más el hash del script de consentimiento. Así ese script puede insertar GA4 y el píxel después del consentimiento. `'self'` y los hosts de analítica se quedan como respaldo de navegadores que ignoran `strict-dynamic`. El build falla si ese JSON no se puede leer o trae `{{`. `report-uri`, `report-to` y `Reporting-Endpoints` solo se escriben si `CSP_REPORT_URL` es una URL https válida.
-
-El sitemap se genera en el build. `/sitemap.xml` repite el índice y, en Cloudflare, redirige a `sitemap-index.xml`. En producción, `robots.txt` declara `/sitemap.xml`. La edición de ejemplo no se incluye. `lastmod` se escribe solo en las ediciones reales, con `modificado` o, si no viene, `fecha`.
-
-En el boletín, el frontmatter puede traer `slug` (si la URL no debe ser el nombre del archivo), `modificado`, `autor`, `fuentes` (URLs https, salen como `citation`), `palabras` y `sufijo: false` cuando el título no deba llevar « | MKT Creativa». Cada edición enlaza a la anterior y a la siguiente cuando existen. El RSS incluye el HTML de las notas, `dc:creator` y `atom:link rel="self"`. No se inventa un correo de autor.
-
-## Datos pendientes
-
-Estos datos no aparecen en el sitio. No hay marcadores en su lugar:
-
-- Razón social, domicilio legal y correos (privacidad y agencia)
-- Horario de atención
-- Si el diagnóstico de entrada es sin costo o de pago
-- Métricas del caso, cuando exista una medición con fecha. Los indicadores previstos son: visitas orgánicas al sitio nuevo, conversaciones de WhatsApp iniciadas desde el sitio, presencia en búsquedas locales de Tuxtla Gutiérrez y tiempo de carga medido del sitio nuevo
-- Hallazgos del diagnóstico de MentalCareClinic, fecha y dirección del sitio nuevo, y estado de su ficha de Google, si Pedro autoriza publicarlos
-- Condiciones del piloto y testimonio de la dirección, solo con autorización
-- Dominio real (`SITE`). El lanzamiento no puede salir con `https://mktcreativa.example` ni con `PREVIEW=1`
-- URL publicada del aviso de privacidad (`BOLETIN_AVISO_URL`) para el correo de confirmación. Hoy el correo no lleva ese enlace
-- Las guías del catálogo que todavía no tienen archivo
-- Teléfono fijo, si alguna vez es distinto del WhatsApp ya publicado
-- Dominio verificado en Resend y los secrets del boletín (`RESEND_API_KEY`, `RESEND_AUDIENCE_ID`, `BOLETIN_FROM`, `BOLETIN_SIGNING_SECRET`) más `BOLETIN_ACTIVO=1`
-- Identificadores de GA4 y del píxel de Meta, si se van a usar
-- Precios aprobados
-- Revisión legal del aviso antes de tratarlo como vigente
-- Proveedor de hospedaje, para nombrarlo en el aviso
-- URL oficial del sitio de la clínica, si se va a enlazar
-- Retirar la edición de ejemplo cuando existan ediciones reales
+No hay analítica ni cookies de terceros. El único dato en el navegador es `avra360.conversationId` en `localStorage`, y solo después de un chat activo. El aviso de privacidad lo dice.

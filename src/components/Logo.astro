@@ -1,26 +1,8 @@
 ---
-import { marca } from '../brand/logo';
-
-interface Props {
-  actual?: boolean;
-}
-
-const { actual = false } = Astro.props;
-const { logo } = marca;
+/**
+ * Wordmark aislado. Para usar un SVG, sustituya el texto de este
+ * componente y conserve el enlace a /.
+ */
 ---
 
-<a class="marca" href="/" aria-current={actual ? 'page' : undefined}>
-  {
-    logo.tipo === 'svg' ? (
-      <img
-        class="marca__img"
-        src={logo.ruta}
-        alt={logo.alt}
-        width={logo.ancho}
-        height={logo.alto}
-      />
-    ) : (
-      <span>{logo.texto}</span>
-    )
-  }
-</a>
+<a class="logo" href="/">AVRA 360</a>

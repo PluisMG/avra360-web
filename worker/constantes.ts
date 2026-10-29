@@ -1,0 +1,12 @@
+export const SITIO = 'avra360-preview';
+export const MAX_MENSAJE = 2000;
+export const MAX_RESPUESTA = 8000;
+export const HISTORIAL = 10;
+export const VIDA_CONVERSACION_MS = 24 * 60 * 60 * 1000;
+export const VIDA_TOKEN_SEG = 15 * 60;
+export const LIMITE_MINUTO = 10;
+export const VENTANA_MINUTO_MS = 10 * 60 * 1000;
+export const LIMITE_DIA = 40;
+export const VENTANA_DIA_MS = 24 * 60 * 60 * 1000;
+export const TIMEOUT_WEBHOOK_MS = 8_000;
+export const AVISO_VERSION = 'aviso-borrador-2026-10-29';

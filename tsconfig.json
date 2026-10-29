@@ -1,5 +1,5 @@
 {
   "extends": "astro/tsconfigs/strict",
-  "include": [".astro/types.d.ts", "**/*"],
-  "exclude": ["dist", "public", "tests", "playwright.config.ts"]
+  "include": [".astro/types.d.ts", "src/**/*", "astro.config.ts"],
+  "exclude": ["dist", "public", "tests", "worker", "playwright.config.ts", "vitest.config.ts"]
 }

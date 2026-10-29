@@ -1,15 +1,31 @@
-/**
- * Secretos que Cloudflare inyecta con `wrangler secret put`.
- * No tienen valor en el repositorio ni en wrangler.jsonc.
- * ASSETS es el binding de los archivos estáticos de dist/.
- */
-export interface EntornoBoletin {
-  ASSETS?: { fetch(request: Request): Promise<Response> };
-  BOLETIN_ACTIVO?: string;
-  RESEND_API_KEY?: string;
-  RESEND_AUDIENCE_ID?: string;
-  BOLETIN_FROM?: string;
-  BOLETIN_SIGNING_SECRET?: string;
-  /** URL publicada del aviso. Vacía hasta que esa página exista en el build. */
-  BOLETIN_AVISO_URL?: string;
+export function presente(valor: string | undefined): valor is string {
+  return typeof valor === 'string' && valor.trim().length > 0;
+}
+
+export function textoEnv(env: Env, clave: keyof Env): string {
+  const valor = env[clave];
+  return typeof valor === 'string' ? valor : '';
+}
+
+export function chatListo(env: Env): boolean {
+  const webhook = textoEnv(env, 'AVRA_WEBHOOK_URL');
+  return (
+    textoEnv(env, 'CHAT_ACTIVO') === '1' &&
+    presente(webhook) &&
+    presente(textoEnv(env, 'AVRA_WEBHOOK_KEY')) &&
+    presente(textoEnv(env, 'AVRA_REPLY_SIGNING_SECRET')) &&
+    presente(textoEnv(env, 'TURNSTILE_SECRET_KEY')) &&
+    presente(textoEnv(env, 'PUBLIC_TURNSTILE_SITE_KEY')) &&
+    esWebhook(webhook)
+  );
+}
+
+function esWebhook(valor: string | undefined): boolean {
+  if (!valor) return false;
+  try {
+    const url = new URL(valor);
+    return url.protocol === 'https:' && !url.username && !url.password;
+  } catch {
+    return false;
+  }
 }

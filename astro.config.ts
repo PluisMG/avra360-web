@@ -2,21 +2,12 @@ import { createHash } from 'node:crypto';
 import { readdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import sitemap from '@astrojs/sitemap';
 import type { AstroIntegration } from 'astro';
-import { defineConfig, envField } from 'astro/config';
-import { clasificarReporteCsp, encabezadoReportingEndpoints, politicaCsp } from './src/config/csp';
-import { mapaLastmodBoletin } from './src/config/ediciones-sitemap';
-import { revisarDirectorioPublico } from './src/config/publicacion';
+import { defineConfig } from 'astro/config';
+import { codigoArranque } from './src/cliente/arranque';
+import { politicaCsp } from './src/config/csp';
 
-const sitio = resolverSitio(process.env.SITE ?? 'https://mktcreativa.example');
-const directorioBoletin = path.join(path.dirname(fileURLToPath(import.meta.url)), 'src/content/boletin');
-
-let cacheLastmod: Promise<Map<string, string>> | undefined;
-function fechasDeEdiciones() {
-  cacheLastmod ??= mapaLastmodBoletin(directorioBoletin);
-  return cacheLastmod;
-}
+const sitio = resolverSitio(process.env.SITE ?? 'https://avra360.example');
 
 function resolverSitio(valor: string) {
   let url: URL;
@@ -25,127 +16,93 @@ function resolverSitio(valor: string) {
   } catch {
     throw new Error('SITE debe ser una URL absoluta, por ejemplo https://tu-dominio.mx');
   }
-  if (url.username || url.password) {
-    throw new Error('SITE no debe incluir usuario ni contraseña.');
-  }
-  if (url.protocol !== 'https:' && url.protocol !== 'http:') {
-    throw new Error('SITE debe usar http o https.');
-  }
+  if (url.username || url.password) throw new Error('SITE no debe incluir usuario ni contraseña.');
+  if (url.protocol !== 'https:' && url.protocol !== 'http:') throw new Error('SITE debe usar http o https.');
   return url.origin;
 }
 
-async function listarHtml(directorio: string): Promise<string[]> {
+async function listar(directorio: string, extension: string): Promise<string[]> {
   const entradas = await readdir(directorio, { withFileTypes: true });
   const archivos: string[] = [];
   for (const entrada of entradas) {
     const ruta = path.join(directorio, entrada.name);
-    if (entrada.isDirectory()) archivos.push(...(await listarHtml(ruta)));
-    else if (entrada.name.endsWith('.html')) archivos.push(ruta);
+    if (entrada.isDirectory()) archivos.push(...(await listar(ruta, extension)));
+    else if (entrada.name.endsWith(extension)) archivos.push(ruta);
   }
   return archivos;
 }
 
-function encabezadosCloudflare(): AstroIntegration {
+function revisarPublicacion(): AstroIntegration {
   return {
-    name: 'encabezados-cloudflare',
+    name: 'revisar-publicacion',
     hooks: {
       'astro:build:done': async ({ dir }) => {
         const raiz = path.resolve(fileURLToPath(dir));
-        const paginas = await listarHtml(raiz);
+        const paginas = await listar(raiz, '.html');
+        const prohibido = [
+          'fonts.googleapis.com',
+          'fonts.gstatic.com',
+          'googletagmanager',
+          'google-analytics',
+          'connect.facebook',
+          'mailerlite',
+          'api.resend.com',
+          '961 191 9199',
+          '+529611919199',
+        ];
         for (const archivo of paginas) {
-          const html = await readFile(archivo, 'utf8');
+          let html = await readFile(archivo, 'utf8');
           const ajustado = html.replace(/<a\b[^>]*>/g, enlaceExterno);
-          if (ajustado !== html) await writeFile(archivo, ajustado);
-        }
-        const inicio = paginas.find((archivo) => path.resolve(archivo) === path.join(raiz, 'index.html'));
-        if (!inicio) {
-          throw new Error(`No se encontró index.html en ${raiz} para calcular la CSP.`);
-        }
-
-        const cuerposJsonLd = new Set<string>();
-        for (const archivo of paginas) {
-          const html = await readFile(archivo, 'utf8');
+          if (ajustado !== html) {
+            await writeFile(archivo, ajustado);
+            html = ajustado;
+          }
+          const bajo = html.toLowerCase();
+          for (const marca of prohibido) {
+            if (bajo.includes(marca)) throw new Error(`${archivo} incluye «${marca}», que no debe publicarse.`);
+          }
+          if (/<style[\s>]/i.test(html)) throw new Error(`Hay un <style> en ${archivo}.`);
           const scripts = [...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)];
           for (const script of scripts) {
             const atributos = script[1] ?? '';
             const cuerpo = script[2] ?? '';
-            const esJsonLd = /type=["']application\/ld\+json["']/.test(atributos);
-            const esExterno = /\bsrc=/.test(atributos);
-            if (esExterno) continue;
-            if (!esJsonLd) {
-              throw new Error(`Hay un script en línea no permitido en ${archivo}. La CSP solo admite el JSON-LD.`);
+            if (/\bsrc=/.test(atributos)) {
+              throw new Error(`Hay un script externo inesperado en ${archivo}.`);
             }
-            if (!cuerpo.trim()) throw new Error(`JSON-LD vacío en ${archivo}.`);
-            try {
-              JSON.parse(cuerpo);
-            } catch {
-              throw new Error(`El JSON-LD de ${archivo} no se puede leer como JSON.`);
+            if (cuerpo !== codigoArranque) {
+              throw new Error(`El script en línea de ${archivo} no coincide con el arranque del chat.`);
             }
-            if (cuerpo.includes('{{')) throw new Error(`El JSON-LD de ${archivo} trae un marcador {{.`);
-            cuerposJsonLd.add(cuerpo);
-          }
-          if (/<style[\s>]/i.test(html)) {
-            throw new Error(`Hay un <style> en ${archivo}. El build deja el CSS en archivos para poder usar style-src 'self'.`);
           }
         }
-
-        if (cuerposJsonLd.size === 0) throw new Error('No se encontró el JSON-LD.');
-        const scriptConsent = await readFile(path.join(raiz, 'scripts/consentimiento.js'));
-        const hashConsent = createHash('sha256').update(scriptConsent).digest('base64');
-        const htmlInicio = await readFile(inicio, 'utf8');
-        if (!htmlInicio.includes(`integrity="sha256-${hashConsent}"`)) {
-          throw new Error('El integrity del script de consentimiento no coincide con el archivo publicado.');
+        const css = (await Promise.all((await listar(raiz, '.css')).map((archivo) => readFile(archivo, 'utf8')))).join('\n');
+        if (!css.includes('font-display: swap') && !css.includes('font-display:swap')) {
+          throw new Error('La tipografía publicada no declara font-display: swap.');
         }
-        const hashes = [
-          ...[...cuerposJsonLd].map((cuerpo) => createHash('sha256').update(cuerpo, 'utf8').digest('base64')),
-          hashConsent,
-        ];
-        const reporte = clasificarReporteCsp(process.env.CSP_REPORT_URL);
-        if (!reporte.lista && reporte.motivo === 'url-invalida') {
-          throw new Error('CSP_REPORT_URL debe ser una URL https absoluta, sin usuario ni contraseña.');
-        }
-        const csp = politicaCsp({
-          hashes,
-          reporte: reporte.lista ? reporte.url : undefined,
-        });
-
-        const lineasEncabezado = [
+        if (!css.includes('.woff2')) throw new Error('No se publicó el woff2 de Inter.');
+        if (css.includes('fonts.googleapis.com')) throw new Error('El CSS publicado pide Google Fonts.');
+        const hash = createHash('sha256').update(codigoArranque).digest('base64');
+        const csp = politicaCsp(hash);
+        const robots = process.env.PREVIEW === '1' ? '\n  X-Robots-Tag: noindex, nofollow' : '';
+        const encabezados = [
           '/*',
           '  X-Content-Type-Options: nosniff',
           '  Referrer-Policy: strict-origin-when-cross-origin',
           '  X-Frame-Options: DENY',
           '  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()',
           '  Strict-Transport-Security: max-age=31536000',
-          `  Content-Security-Policy: ${csp}`,
-        ];
-        if (reporte.lista) {
-          lineasEncabezado.push(`  Reporting-Endpoints: ${encabezadoReportingEndpoints(reporte.url)}`);
-        }
-        const cuerpo = [
-          ...lineasEncabezado,
-          '',
-          '/favicon.ico',
-          '  Content-Type: image/png',
+          `  Content-Security-Policy: ${csp}${robots}`,
           '',
           '/_astro/*',
           '  Cache-Control: public, max-age=31536000, immutable',
           '',
-          '/scripts/*',
-          '  Cache-Control: public, max-age=86400',
+          '/chat.js',
+          '  Cache-Control: public, max-age=3600',
           '',
         ].join('\n');
-
-        await writeFile(path.join(raiz, '_headers'), cuerpo, 'utf8');
-
-        const indice = path.join(raiz, 'sitemap-index.xml');
-        const mapa = await readFile(indice).catch(() => {
-          throw new Error('No se encontró sitemap-index.xml para publicar /sitemap.xml.');
-        });
-        await writeFile(path.join(raiz, 'sitemap.xml'), mapa);
-
-        const hallazgos = await revisarDirectorioPublico(raiz);
-        if (hallazgos.length > 0) {
-          throw new Error(`El build público incluye texto que no debe publicarse:\n${hallazgos.join('\n')}`);
+        await writeFile(path.join(raiz, '_headers'), encabezados);
+        if (process.env.PREVIEW === '1') {
+          const robotsTxt = await readFile(path.join(raiz, 'robots.txt'), 'utf8');
+          if (!robotsTxt.includes('Disallow: /')) throw new Error('En vista previa, robots.txt debe incluir Disallow: /.');
         }
       },
     },
@@ -157,8 +114,9 @@ function enlaceExterno(etiqueta: string) {
   if (!href) return etiqueta;
   const sinRel = etiqueta.replace(/\srel="[^"]*"/, '');
   const relPrevio = etiqueta.match(/\srel="([^"]*)"/)?.[1] ?? '';
-  const rel = new Set(relPrevio.split(/\s+/).filter((valor) => valor && valor !== 'nofollow'));
+  const rel = new Set(relPrevio.split(/\s+/).filter(Boolean));
   rel.add('noopener');
+  rel.add('noreferrer');
   return sinRel.replace(/>$/, ` rel="${[...rel].join(' ')}">`);
 }
 
@@ -170,41 +128,5 @@ export default defineConfig({
     format: 'directory',
     inlineStylesheets: 'never',
   },
-  integrations: [
-    sitemap({
-      filter: (pagina) => {
-        const url = new URL(pagina);
-        if (url.pathname.endsWith('.xml') || url.pathname.endsWith('.txt')) return false;
-        if (url.pathname.includes('/404')) return false;
-        if (url.pathname.includes('/boletin/ejemplo-')) return false;
-        if (url.pathname.includes('/aviso-de-privacidad')) return false;
-        if (url.pathname.includes('/boletin/enviado')) return false;
-        if (url.pathname.includes('/boletin/confirmada')) return false;
-        if (url.pathname.includes('/boletin/enlace-no-valido')) return false;
-        if (url.pathname.includes('/boletin/baja-confirmada')) return false;
-        return true;
-      },
-      async serialize(item) {
-        const mapa = await fechasDeEdiciones();
-        const ruta = new URL(item.url).pathname.replace(/\/$/, '') || '/';
-        const fecha = mapa.get(ruta);
-        if (!fecha) return item;
-        return { ...item, lastmod: fecha };
-      },
-    }),
-    encabezadosCloudflare(),
-  ],
-  env: {
-    schema: {
-      PREVIEW: envField.string({ context: 'server', access: 'public', optional: true }),
-      PUBLIC_MOSTRAR_EDICION_EJEMPLO: envField.string({
-        context: 'server',
-        access: 'public',
-        optional: true,
-      }),
-      BOLETIN_ACTIVO: envField.string({ context: 'server', access: 'public', optional: true }),
-      PUBLIC_GA4_ID: envField.string({ context: 'server', access: 'public', optional: true }),
-      PUBLIC_META_PIXEL_ID: envField.string({ context: 'server', access: 'public', optional: true }),
-    },
-  },
+  integrations: [revisarPublicacion()],
 });

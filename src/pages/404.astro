@@ -1,18 +1,14 @@
 ---
-import EnlaceWhatsapp from '../components/EnlaceWhatsapp.astro';
-import { mensajesWhatsapp } from '../config/agencia';
+import Logo from '../components/Logo.astro';
 import Base from '../layouts/Base.astro';
-import { errorPagina, seo } from '../config/textos';
 ---
 
-<Base titulo={seo.error.titulo} descripcion={seo.error.descripcion} mensajeWhatsapp={mensajesWhatsapp.error} noindex>
-  <div class="contenedor seccion">
-    <h1>{errorPagina.h1}</h1>
-    <p class="lede">{errorPagina.lede}</p>
-    <div class="acciones">
-      <a class="boton" href="/">Ir al inicio</a>
-      <a class="boton boton--secundario" href="/servicios">Ver servicios</a>
-      <EnlaceWhatsapp mensaje={mensajesWhatsapp.error} />
-    </div>
-  </div>
+<Base titulo="Página no encontrada — AVRA 360" descripcion="Esta página no existe." robots="noindex, nofollow">
+  <header class="cabecera">
+    <Logo />
+  </header>
+  <main class="pagina">
+    <h1>Esta página no existe.</h1>
+    <p><a href="/">Volver al inicio</a></p>
+  </main>
 </Base>

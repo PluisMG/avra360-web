@@ -1,101 +1,32 @@
 ---
+import inter400 from '@fontsource/inter/files/inter-latin-400-normal.woff2?url';
+import '../styles/fuentes.css';
 import '../styles/global.css';
-import { createHash } from 'node:crypto';
-import { readFileSync } from 'node:fs';
-import path from 'node:path';
-import { getCollection } from 'astro:content';
-import { marca } from '../brand/logo';
-import { agencia } from '../config/agencia';
-import { vistaPrevia } from '../config/entorno';
-import { jsonLdOrganizacion, urlCanonica } from '../config/schema';
-import Cabecera from '../components/Cabecera.astro';
-import Chat from '../components/Chat.astro';
-import Consentimiento from '../components/Consentimiento.astro';
-import Pie from '../components/Pie.astro';
 
 interface Props {
   titulo: string;
   descripcion: string;
-  mensajeWhatsapp: string;
-  noindex?: boolean;
-  sufijo?: boolean;
-  ogType?: 'website' | 'article';
-  publicado?: string;
-  jsonLdExtra?: string[];
+  robots?: string;
 }
 
-const {
-  titulo,
-  descripcion,
-  mensajeWhatsapp,
-  noindex = false,
-  sufijo = true,
-  ogType = 'website',
-  publicado,
-  jsonLdExtra = [],
-} = Astro.props;
-const tituloDocumento = sufijo ? `${titulo} | ${agencia.nombre}` : titulo;
-const canonica = Astro.site ? urlCanonica(Astro.site, Astro.url.pathname) : Astro.url.href;
-const robots = vistaPrevia || noindex ? 'noindex, nofollow' : 'index, follow';
-const paginas = await getCollection('paginas');
-const slugsServicio = paginas.filter((pagina) => pagina.data.tipo === 'servicio').map((pagina) => pagina.data.slug);
-const origen = Astro.site?.origin ?? new URL(canonica).origin;
-const jsonLd = jsonLdOrganizacion(origen, slugsServicio);
-const imagen = new URL('/og.png', canonica).href;
-const integridadConsentimiento = createHash('sha256')
-  .update(readFileSync(path.join(process.cwd(), 'public/scripts/consentimiento.js')))
-  .digest('base64');
+const { titulo, descripcion, robots } = Astro.props;
+const vistaPrevia = process.env.PREVIEW === '1';
+const robotsFinal = robots ?? (vistaPrevia ? 'noindex, nofollow' : undefined);
 ---
 
 <!doctype html>
-<html lang="es-MX">
+<html lang="es">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{tituloDocumento}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>{titulo}</title>
     <meta name="description" content={descripcion} />
-    <meta name="robots" content={robots} />
+    {robotsFinal && <meta name="robots" content={robotsFinal} />}
     <meta name="theme-color" content="#ffffff" />
-    <meta name="color-scheme" content="light" />
-    <link rel="canonical" href={canonica} />
-    <link rel="icon" href={marca.favicon.svg} type="image/svg+xml" />
-    <link rel="icon" href={marca.favicon.png} type="image/png" sizes="32x32" />
-    <link rel="icon" href={marca.favicon.ico} type="image/png" sizes="any" />
-    <link rel="apple-touch-icon" href={marca.favicon.apple} sizes="180x180" />
-    <link rel="alternate" type="application/rss+xml" title={`Boletín ${agencia.nombre}`} href="/boletin/rss.xml" />
-    <meta property="og:locale" content="es_MX" />
-    <meta property="og:type" content={ogType} />
-    {ogType === 'article' && publicado && <meta property="article:published_time" content={publicado} />}
-    {ogType === 'article' && <meta property="article:section" content="Boletín" />}
-    <meta property="og:site_name" content={agencia.nombre} />
-    <meta property="og:title" content={tituloDocumento} />
-    <meta property="og:description" content={descripcion} />
-    <meta property="og:url" content={canonica} />
-    <meta property="og:image" content={imagen} />
-    <meta property="og:image:width" content="1200" />
-    <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="MKT Creativa, marketing para clínicas en Tuxtla Gutiérrez, Chiapas" />
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content={tituloDocumento} />
-    <meta name="twitter:description" content={descripcion} />
-    <meta name="twitter:image" content={imagen} />
-    <script type="application/ld+json" set:html={jsonLd} is:inline />
-    {jsonLdExtra.map((bloque) => <script type="application/ld+json" set:html={bloque} is:inline />)}
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="preload" href={inter400} as="font" type="font/woff2" crossorigin />
   </head>
   <body>
-    <a class="saltar" href="#contenido">Saltar al contenido</a>
-    <Cabecera mensaje={mensajeWhatsapp} />
-    <main id="contenido" tabindex="-1">
-      <slot />
-    </main>
-    <Chat />
-    <Consentimiento />
-    <Pie mensaje={mensajeWhatsapp} />
-    <script
-      is:inline
-      type="module"
-      src="/scripts/consentimiento.js"
-      integrity={`sha256-${integridadConsentimiento}`}
-      crossorigin="anonymous"></script>
+    <slot />
   </body>
 </html>
