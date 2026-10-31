@@ -31,6 +31,9 @@ export function iniciarChat(): void {
   let ocupado = false;
   let widgetId: string | undefined;
   let turnstileListo: Promise<void> | undefined;
+  // Tras entregar un token, el widget queda resuelto: execute() sin reset()
+  // devuelve el mismo token ya gastado y Siteverify responde 403.
+  let tokenEntregado = false;
 
   area.addEventListener('focus', () => {
     if (activo) void cargarTurnstile();
@@ -75,23 +78,12 @@ export function iniciarChat(): void {
     }
     mostrarEscribiendo();
     try {
-      const token = await tokenTurnstile();
-      const cuerpo: { message: string; turnstileToken: string; conversationId?: string } = {
-        message: texto,
-        turnstileToken: token,
-      };
-      const guardado = leerConversacion();
-      if (guardado) cuerpo.conversationId = guardado;
-      const respuesta = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify(cuerpo),
-      });
-      const data = (await respuesta.json().catch(() => null)) as {
-        status?: string;
-        conversationId?: string;
-        messageId?: string;
-      } | null;
+      let { respuesta, data } = await mandarMensaje(texto);
+      // Un token de Turnstile se valida una sola vez. Si el servidor lo rechaza
+      // (vencido o repetido), se pide uno nuevo y se reintenta una sola vez.
+      if (respuesta.status === 403 && data?.status === 'verificacion') {
+        ({ respuesta, data } = await mandarMensaje(texto));
+      }
       if (respuesta.status === 503 && data?.status === 'configurando') {
         quitarEscribiendo();
         mostrarConfiguracion();
@@ -121,6 +113,30 @@ export function iniciarChat(): void {
     } finally {
       soltarFoco();
     }
+  }
+
+  async function mandarMensaje(texto: string): Promise<{
+    respuesta: Response;
+    data: { status?: string; conversationId?: string; messageId?: string } | null;
+  }> {
+    const token = await tokenTurnstile();
+    const cuerpo: { message: string; turnstileToken: string; conversationId?: string } = {
+      message: texto,
+      turnstileToken: token,
+    };
+    const guardado = leerConversacion();
+    if (guardado) cuerpo.conversationId = guardado;
+    const respuesta = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(cuerpo),
+    });
+    const data = (await respuesta.json().catch(() => null)) as {
+      status?: string;
+      conversationId?: string;
+      messageId?: string;
+    } | null;
+    return { respuesta, data };
   }
 
   function soltarFoco(): void {
@@ -255,40 +271,41 @@ export function iniciarChat(): void {
 
   async function tokenTurnstile(): Promise<string> {
     await cargarTurnstile();
-    const turno = (
+    const api = (
       window as Window & {
-        turnstile?: { execute: (id: string) => void };
+        turnstile?: {
+          execute: (id: string, opciones?: Record<string, unknown>) => void;
+          reset: (id: string) => void;
+        };
       }
     ).turnstile;
     const idWidget = widgetId;
-    if (!turno || !idWidget) throw new Error('turnstile');
+    if (!api || !idWidget) throw new Error('turnstile');
+    if (tokenEntregado) {
+      api.reset(idWidget);
+      tokenEntregado = false;
+    }
     return new Promise((resolver, rechazar) => {
-      const nodo = document.querySelector<HTMLElement>('#turnstile');
-      if (!nodo) {
-        rechazar(new Error('turnstile'));
-        return;
-      }
-      const limite = window.setTimeout(() => rechazar(new Error('turnstile')), 15_000);
-      nodo.addEventListener(
-        'turno',
-        (evento) => {
-          window.clearTimeout(limite);
-          resolver((evento as CustomEvent<string>).detail);
-        },
-        { once: true },
-      );
-      const api = (
-        window as Window & {
-          turnstile?: {
-            execute: (id: string, opciones?: Record<string, unknown>) => void;
-          };
+      let listo = false;
+      const terminar = (token?: string) => {
+        if (listo) return;
+        listo = true;
+        window.clearTimeout(limite);
+        if (token) {
+          tokenEntregado = true;
+          resolver(token);
+        } else {
+          // Deja el widget limpio para el siguiente intento.
+          tokenEntregado = true;
+          rechazar(new Error('turnstile'));
         }
-      ).turnstile;
-      api?.execute(idWidget, {
-        callback: (token: string) => {
-          nodo.dispatchEvent(new CustomEvent('turno', { detail: token }));
-        },
-        'error-callback': () => rechazar(new Error('turnstile')),
+      };
+      const limite = window.setTimeout(() => terminar(), 15_000);
+      api.execute(idWidget, {
+        callback: (token: string) => terminar(token),
+        'error-callback': () => terminar(),
+        'expired-callback': () => terminar(),
+        'timeout-callback': () => terminar(),
       });
     });
   }

@@ -24,7 +24,11 @@ beforeEach(() => {
   vi.spyOn(AbortSignal, 'timeout');
   globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
-    if (url.includes('challenges.cloudflare.com')) return Response.json({ success: red.turnstile });
+    if (url.includes('challenges.cloudflare.com')) {
+      return Response.json(
+        red.turnstile ? { success: true } : { success: false, 'error-codes': ['timeout-or-duplicate'] },
+      );
+    }
     if (url.startsWith('https://webhook.test/avra')) {
       red.llamadas.push({ url, init: init ?? {} });
       if (red.webhookFalla) throw new Error('red');
@@ -58,10 +62,19 @@ describe('configuración', () => {
 describe('chat activo', () => {
   it('rechaza Turnstile inválido sin llamar al webhook', async () => {
     red.turnstile = false;
+    const registros: string[] = [];
+    const espia = vi.spyOn(console, 'log').mockImplementation((linea: unknown) => {
+      registros.push(String(linea));
+    });
     const respuesta = await postChat({ message: 'Hola', turnstileToken: 'malo' }, ipNueva());
     expect(respuesta.status).toBe(403);
     expect(await respuesta.json()).toEqual({ status: 'verificacion' });
     expect(red.llamadas).toHaveLength(0);
+    const rechazo = registros.map((linea) => JSON.parse(linea) as { evento?: string; codigos?: string[] }).find((dato) => dato.evento === 'turnstile_rechazado');
+    expect(rechazo?.codigos).toEqual(['timeout-or-duplicate']);
+    expect(registros.join('\n')).not.toContain('malo');
+    expect(registros.join('\n')).not.toContain('secreto-turnstile');
+    espia.mockRestore();
   });
 
   it('rechaza un mensaje vacío o demasiado largo', async () => {

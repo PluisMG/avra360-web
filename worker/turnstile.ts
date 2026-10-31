@@ -12,7 +12,13 @@ export async function verificarTurnstile(secret: string, token: string, ip: stri
       signal: AbortSignal.timeout(8_000),
     });
     if (!respuesta.ok) return false;
-    const data = (await respuesta.json()) as { success?: boolean };
+    const data = (await respuesta.json()) as { success?: boolean; 'error-codes'?: unknown };
+    if (data.success !== true) {
+      const codigos = Array.isArray(data['error-codes'])
+        ? data['error-codes'].filter((codigo): codigo is string => typeof codigo === 'string').slice(0, 5)
+        : [];
+      console.log(JSON.stringify({ evento: 'turnstile_rechazado', codigos }));
+    }
     return data.success === true;
   } catch {
     return false;
