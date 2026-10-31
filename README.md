@@ -28,7 +28,11 @@ npm run preview
 | `AVRA_REPLY_SIGNING_SECRET` | secret | HMAC del `replyToken` |
 | `TURNSTILE_SECRET_KEY` | secret | secret de Siteverify |
 
-El webhook es un POST, cuerpo JSON, timeout de 8 segundos y un solo intento. Responde 200 cuando AVRA despierta y no trae la respuesta. AVRA devuelve `{ replyToken, text }` a `POST /api/chat/reply`. El visitante la recibe en `GET /api/chat/:conversationId/events`, con sondeo cada 2 segundos y backoff. A los 3 minutos la interfaz dice: «AVRA está tardando más de lo normal».
+El webhook es un POST, cuerpo JSON, timeout de 8 segundos y un solo intento. Responde 200 cuando AVRA despierta y no trae la respuesta. AVRA devuelve `{ replyToken, text }` a `POST /api/chat/reply`. El Durable Object `Conversation` empuja esa respuesta por SSE en `GET /api/chat/:conversationId/stream`. Si el flujo no abre, el navegador vuelve al sondeo de `GET /api/chat/:conversationId/events` (2 segundos y backoff). A los 3 minutos la interfaz dice: «AVRA está tardando más de lo normal». La CSP mantiene `connect-src 'self'`.
+
+Cada mensaje deja un log `chat_tiempo` con `t_recibido`, `t_webhook_ok`, `t_respuesta`, `t_entregado` y las duraciones en milisegundos. Solo van identificadores y milisegundos, sin texto ni datos personales.
+
+El token de Turnstile se pide al enfocar el campo y de nuevo después de cada envío. Cada token se usa una sola vez.
 
 La conversación vive en el Durable Object `Conversation` solo para retransmitir. Una alarma la borra a las 24 horas. La IP no se guarda: `RateLimiter` usa su hash (10 mensajes cada 10 minutos y 40 al día).
 

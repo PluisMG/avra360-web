@@ -183,6 +183,51 @@ describe('chat activo', () => {
     expect(red.llamadas).toHaveLength(1);
   });
 
+  it('empuja la respuesta por SSE, conserva el sondeo y anota los tiempos', async () => {
+    const registros: string[] = [];
+    const espia = vi.spyOn(console, 'log').mockImplementation((linea: unknown) => {
+      registros.push(String(linea));
+    });
+    const ip = ipNueva();
+    const creado = await postChat({ message: 'Quiero una marca', turnstileToken: 'ok' }, ip);
+    const pendiente = (await creado.json()) as { conversationId: string; messageId: string };
+    const cuerpo = JSON.parse(String(red.llamadas.at(-1)?.init.body)) as { replyToken: string };
+    expect((await postReply(cuerpo.replyToken, 'Listo por SSE')).status).toBe(200);
+
+    const flujo = await getStream(pendiente.conversationId);
+    expect(flujo.status).toBe(200);
+    expect(flujo.headers.get('content-type')).toContain('text/event-stream');
+    expect(flujo.headers.get('content-security-policy')).toContain("connect-src 'self'");
+    const crudo = await leerHastaFin(flujo);
+    expect(crudo).toContain('event: mensaje');
+    expect(crudo).toContain('Listo por SSE');
+    expect(crudo).toContain('event: fin');
+
+    const sondeo = await getEventos(pendiente.conversationId);
+    expect(sondeo.headers.get('content-type')).toContain('application/json');
+    const data = (await sondeo.json()) as { messages: { text: string }[] };
+    expect(data.messages.some((mensaje) => mensaje.text === 'Listo por SSE')).toBe(true);
+
+    const tiempos = registros
+      .map((linea) => JSON.parse(linea) as Record<string, unknown>)
+      .filter((dato) => dato.evento === 'chat_tiempo' && dato.messageId === pendiente.messageId);
+    const completo = tiempos.find((dato) => dato.t_entregado != null);
+    expect(completo?.conversationId).toBe(pendiente.conversationId);
+    expect(completo?.t_recibido).toEqual(expect.any(Number));
+    expect(completo?.t_webhook_ok).toEqual(expect.any(Number));
+    expect(completo?.t_respuesta).toEqual(expect.any(Number));
+    expect(completo?.t_entregado).toEqual(expect.any(Number));
+    expect(completo?.ms_webhook).toBe(Number(completo?.t_webhook_ok) - Number(completo?.t_recibido));
+    expect(completo?.ms_respuesta).toBe(Number(completo?.t_respuesta) - Number(completo?.t_webhook_ok));
+    expect(completo?.ms_entrega).toBe(Number(completo?.t_entregado) - Number(completo?.t_respuesta));
+    expect(completo?.ms_total).toBe(Number(completo?.t_entregado) - Number(completo?.t_recibido));
+    const serializado = JSON.stringify(tiempos);
+    expect(serializado).not.toContain('Quiero una marca');
+    expect(serializado).not.toContain('Listo por SSE');
+    expect(serializado).not.toContain(ip);
+    espia.mockRestore();
+  });
+
   it('borra la conversación cuando corre la alarma de 24 h', async () => {
     const creado = await postChat({ message: 'Temporal', turnstileToken: 'ok' }, ipNueva());
     const { conversationId } = (await creado.json()) as { conversationId: string };
@@ -303,6 +348,36 @@ async function postReply(replyToken: string, text: string) {
 
 async function getEventos(conversationId: string) {
   return pedir(`https://avra360.example/api/chat/${conversationId}/events`);
+}
+
+async function getStream(conversationId: string) {
+  const ctx = createExecutionContext();
+  const respuesta = await worker.fetch(
+    new IncomingRequest(`https://avra360.example/api/chat/${conversationId}/stream`),
+    env,
+    ctx,
+  );
+  return respuesta;
+}
+
+async function leerHastaFin(respuesta: Response): Promise<string> {
+  const lector = respuesta.body?.getReader();
+  if (!lector) return '';
+  const decodificador = new TextDecoder();
+  let buf = '';
+  const fallo = new Promise<never>((_, rechazar) => {
+    setTimeout(() => rechazar(new Error('sse-test')), 5_000);
+  });
+  try {
+    while (!buf.includes('event: fin')) {
+      const paso = await Promise.race([lector.read(), fallo]);
+      if (paso.done) break;
+      buf += decodificador.decode(paso.value, { stream: true });
+    }
+  } finally {
+    await lector.cancel();
+  }
+  return buf;
 }
 
 async function informeCsp(ip: string, cuerpo: string) {

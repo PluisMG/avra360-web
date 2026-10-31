@@ -34,9 +34,12 @@ export function iniciarChat(): void {
   // Tras entregar un token, el widget queda resuelto: execute() sin reset()
   // devuelve el mismo token ya gastado y Siteverify responde 403.
   let tokenEntregado = false;
+  // Token ya pedido y todavía no verificado. reset() en ese lapso lo invalida.
+  let tokenEnVuelo = false;
+  let reserva: Promise<string> | null = null;
 
   area.addEventListener('focus', () => {
-    if (activo) void cargarTurnstile();
+    if (activo) precalentarTurnstile();
   });
 
   area.addEventListener('keydown', (evento) => {
@@ -102,7 +105,7 @@ export function iniciarChat(): void {
       guardarConversacion(data.conversationId);
       const reply = await esperarRespuesta(data.conversationId, data.messageId);
       quitarEscribiendo();
-      agregarMensaje('assistant', reply);
+      if (!lista.querySelector(`[data-reply="${data.messageId}"]`)) agregarMensaje('assistant', reply);
     } catch (error) {
       quitarEscribiendo();
       if (error instanceof Error && error.message === 'lento') {
@@ -119,24 +122,47 @@ export function iniciarChat(): void {
     respuesta: Response;
     data: { status?: string; conversationId?: string; messageId?: string } | null;
   }> {
-    const token = await tokenTurnstile();
-    const cuerpo: { message: string; turnstileToken: string; conversationId?: string } = {
-      message: texto,
-      turnstileToken: token,
-    };
-    const guardado = leerConversacion();
-    if (guardado) cuerpo.conversationId = guardado;
-    const respuesta = await fetch('/api/chat', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(cuerpo),
+    const token = await tomarToken();
+    try {
+      const cuerpo: { message: string; turnstileToken: string; conversationId?: string } = {
+        message: texto,
+        turnstileToken: token,
+      };
+      const guardado = leerConversacion();
+      if (guardado) cuerpo.conversationId = guardado;
+      const respuesta = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(cuerpo),
+      });
+      const data = (await respuesta.json().catch(() => null)) as {
+        status?: string;
+        conversationId?: string;
+        messageId?: string;
+      } | null;
+      return { respuesta, data };
+    } finally {
+      tokenEnVuelo = false;
+      precalentarTurnstile();
+    }
+  }
+
+  function precalentarTurnstile(): void {
+    if (!activo || reserva || tokenEnVuelo) return;
+    const pendiente = tokenTurnstile();
+    reserva = pendiente;
+    pendiente.catch(() => {
+      if (reserva === pendiente) reserva = null;
     });
-    const data = (await respuesta.json().catch(() => null)) as {
-      status?: string;
-      conversationId?: string;
-      messageId?: string;
-    } | null;
-    return { respuesta, data };
+  }
+
+  async function tomarToken(): Promise<string> {
+    if (!reserva) precalentarTurnstile();
+    const pendiente = reserva;
+    reserva = null;
+    tokenEnVuelo = true;
+    if (!pendiente) throw new Error('turnstile');
+    return pendiente;
   }
 
   function soltarFoco(): void {
@@ -218,6 +244,78 @@ export function iniciarChat(): void {
   }
 
   async function esperarRespuesta(conversationId: string, messageId: string): Promise<string> {
+    try {
+      return await esperarPorSse(conversationId, messageId);
+    } catch (error) {
+      if (error instanceof Error && error.message === 'lento') throw error;
+    }
+    return esperarPorSondeo(conversationId, messageId);
+  }
+
+  async function esperarPorSse(conversationId: string, messageId: string): Promise<string> {
+    const inicio = Date.now();
+    const controlador = new AbortController();
+    const respuesta = await fetch(`/api/chat/${encodeURIComponent(conversationId)}/stream`, {
+      headers: { accept: 'text/event-stream' },
+      signal: controlador.signal,
+    });
+    const tipo = respuesta.headers.get('content-type') ?? '';
+    if (!respuesta.ok || !respuesta.body || !tipo.includes('text/event-stream')) {
+      controlador.abort();
+      throw new Error('sse');
+    }
+    const lector = respuesta.body.getReader();
+    const decodificador = new TextDecoder();
+    let resto = '';
+    let texto = '';
+    try {
+      while (!esperaAgotada(inicio, Date.now())) {
+        const paso = await leerConTope(lector, inicio);
+        if (paso.done) break;
+        resto += decodificador.decode(paso.value, { stream: true });
+        const bloques = resto.split('\n\n');
+        resto = bloques.pop() ?? '';
+        for (const bloque of bloques) {
+          const evento = parsearEvento(bloque);
+          if (!evento) continue;
+          if (
+            (evento.nombre === 'delta' && evento.datos.messageId === messageId) ||
+            (evento.nombre === 'mensaje' && evento.datos.replyTo === messageId)
+          ) {
+            if (typeof evento.datos.text !== 'string') continue;
+            texto = evento.nombre === 'delta' ? texto + evento.datos.text : evento.datos.text;
+            pintarRespuesta(messageId, texto);
+          } else if (
+            evento.nombre === 'mensaje' &&
+            evento.datos.role === 'assistant' &&
+            evento.datos.replyTo !== messageId &&
+            typeof evento.datos.text === 'string'
+          ) {
+            agregarMensaje('assistant', evento.datos.text);
+          }
+          if (evento.nombre === 'fin' && evento.datos.messageId === messageId && texto) return texto;
+        }
+      }
+    } finally {
+      controlador.abort();
+    }
+    if (texto) return texto;
+    if (esperaAgotada(inicio, Date.now())) throw new Error('lento');
+    throw new Error('sse');
+  }
+
+  function pintarRespuesta(messageId: string, texto: string): void {
+    quitarEscribiendo();
+    let p = lista.querySelector<HTMLParagraphElement>(`[data-reply="${messageId}"]`);
+    if (!p) {
+      p = agregarMensaje('assistant', texto);
+      p.dataset.reply = messageId;
+      return;
+    }
+    p.textContent = texto;
+  }
+
+  async function esperarPorSondeo(conversationId: string, messageId: string): Promise<string> {
     const inicio = Date.now();
     let espera = ESPERA_INICIAL_MS;
     while (!esperaAgotada(inicio, Date.now())) {
@@ -315,6 +413,39 @@ function dormir(ms: number): Promise<void> {
   return new Promise((resolver) => {
     window.setTimeout(resolver, ms);
   });
+}
+
+function leerConTope(
+  lector: ReadableStreamDefaultReader<Uint8Array>,
+  inicio: number,
+): Promise<{ done: boolean; value?: Uint8Array }> {
+  const restante = ESPERA_MAX_MS - (Date.now() - inicio);
+  if (restante <= 0) return Promise.reject(new Error('lento'));
+  let temporizador = 0;
+  const tope = new Promise<never>((_, rechazar) => {
+    temporizador = window.setTimeout(() => rechazar(new Error('lento')), restante);
+  });
+  return Promise.race([lector.read(), tope]).finally(() => {
+    window.clearTimeout(temporizador);
+  });
+}
+
+function parsearEvento(bloque: string): { nombre: string; datos: Record<string, unknown> } | null {
+  let nombre = 'message';
+  const datos: string[] = [];
+  for (const linea of bloque.split('\n')) {
+    if (linea.startsWith(':')) continue;
+    if (linea.startsWith('event:')) nombre = linea.slice(6).trim();
+    else if (linea.startsWith('data:')) datos.push(linea.slice(5).trim());
+  }
+  if (datos.length === 0) return null;
+  try {
+    const valor = JSON.parse(datos.join('\n')) as unknown;
+    if (!valor || typeof valor !== 'object') return null;
+    return { nombre, datos: valor as Record<string, unknown> };
+  } catch {
+    return null;
+  }
 }
 
 function leerConversacion(): string | null {

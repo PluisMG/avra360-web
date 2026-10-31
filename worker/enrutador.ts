@@ -18,6 +18,8 @@ export async function enrutar(request: Request, env: Env): Promise<Response | nu
   if (request.method === 'POST' && url.pathname === '/api/chat/reply') return postReply(request, env);
   const eventos = url.pathname.match(/^\/api\/chat\/([0-9a-f-]{36})\/events$/i);
   if (request.method === 'GET' && eventos?.[1]) return getEventos(eventos[1], env);
+  const flujo = url.pathname.match(/^\/api\/chat\/([0-9a-f-]{36})\/stream$/i);
+  if (request.method === 'GET' && flujo?.[1]) return getStream(flujo[1], env);
   if (url.pathname.startsWith('/api/')) return json({ status: 'no-encontrado' }, 404);
   return null;
 }
@@ -61,6 +63,7 @@ async function postChat(request: Request, env: Env): Promise<Response> {
   if (!nueva && !(await conversacion.existe())) return json({ status: 'no-encontrado' }, 404);
 
   const { messageId, history } = await conversacion.agregarUsuario(message);
+  await conversacion.anotarTiempo(conversationId, messageId, 't_recibido', Date.now());
   const expira = Math.floor(Date.now() / 1000) + VIDA_TOKEN_SEG;
   const replyToken = await firmarToken(textoEnv(env, 'AVRA_REPLY_SIGNING_SECRET'), {
     v: 1,
@@ -77,6 +80,7 @@ async function postChat(request: Request, env: Env): Promise<Response> {
     site: SITIO,
   };
   const despierto = await despertarAvra(textoEnv(env, 'AVRA_WEBHOOK_URL'), textoEnv(env, 'AVRA_WEBHOOK_KEY'), cuerpo);
+  if (despierto) await conversacion.anotarTiempo(conversationId, messageId, 't_webhook_ok', Date.now());
   await intentarArchivar(env, { consentimiento: false, conversationId });
   if (!despierto) return json({ status: 'error', conversationId, messageId }, 502);
   console.log(JSON.stringify({ evento: 'chat_pendiente', conversationId, messageId }));
@@ -102,11 +106,21 @@ async function postReply(request: Request, env: Env): Promise<Response> {
   return json({ status: 'ok' });
 }
 
+async function getStream(conversationId: string, env: Env): Promise<Response> {
+  if (!chatListo(env)) return json({ status: 'configurando' }, 503);
+  if (!UUID.test(conversationId)) return json({ status: 'invalido' }, 400);
+  const conversacion = env.CONVERSATION.get(env.CONVERSATION.idFromName(conversationId));
+  if (!(await conversacion.existe())) return json({ status: 'no-encontrado' }, 404);
+  return conversacion.fetch(new Request('https://conversation.internal/sse'));
+}
+
 async function getEventos(conversationId: string, env: Env): Promise<Response> {
   if (!chatListo(env)) return json({ status: 'configurando' }, 503);
   if (!UUID.test(conversationId)) return json({ status: 'invalido' }, 400);
-  const estado = await env.CONVERSATION.get(env.CONVERSATION.idFromName(conversationId)).leer();
+  const conversacion = env.CONVERSATION.get(env.CONVERSATION.idFromName(conversationId));
+  const estado = await conversacion.leer();
   if (!estado) return json({ status: 'no-encontrado' }, 404);
+  await conversacion.marcarEntregas(true);
   const ultimo = estado.messages.at(-1);
   return json({
     conversationId,
