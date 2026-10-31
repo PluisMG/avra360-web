@@ -48,9 +48,10 @@ async function prepararHtml(respuesta: Response, env: Env): Promise<Response> {
 
 function cacheEstatico(respuesta: Response, pathname: string): Response {
   const marcaOFavicon = pathname.startsWith('/brand/') || pathname === '/favicon.ico' || pathname === '/favicon.svg';
-  if (!marcaOFavicon || respuesta.status < 200 || respuesta.status >= 300) return respuesta;
+  if (!marcaOFavicon) return respuesta;
   const headers = new Headers(respuesta.headers);
-  headers.set('cache-control', 'public, max-age=604800');
+  // _headers también pone max-age en /brand/*, incluso si el archivo no existe.
+  headers.set('cache-control', respuesta.ok ? 'public, max-age=604800' : 'no-store');
   return new Response(respuesta.body, {
     status: respuesta.status,
     statusText: respuesta.statusText,
