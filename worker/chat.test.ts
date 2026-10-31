@@ -274,6 +274,12 @@ describe('csp y formulario sin JavaScript', () => {
 });
 
 describe('activos y encabezados', () => {
+  it('no guarda una semana un 404 de la marca', async () => {
+    const respuesta = await pedir('https://avra360.example/brand/no-existe.svg');
+    expect(respuesta.status).toBe(404);
+    expect(respuesta.headers.get('cache-control') ?? '').not.toContain('max-age=604800');
+  });
+
   it('guarda la marca y el favicon una semana', async () => {
     for (const ruta of ['/brand/avra360-favicon.svg', '/favicon.ico']) {
       const respuesta = await pedir(`https://avra360.example${ruta}`);

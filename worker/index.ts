@@ -48,7 +48,7 @@ async function prepararHtml(respuesta: Response, env: Env): Promise<Response> {
 
 function cacheEstatico(respuesta: Response, pathname: string): Response {
   const marcaOFavicon = pathname.startsWith('/brand/') || pathname === '/favicon.ico' || pathname === '/favicon.svg';
-  if (!marcaOFavicon) return respuesta;
+  if (!marcaOFavicon || respuesta.status < 200 || respuesta.status >= 300) return respuesta;
   const headers = new Headers(respuesta.headers);
   headers.set('cache-control', 'public, max-age=604800');
   return new Response(respuesta.body, {
