@@ -34,9 +34,14 @@ test('el repositorio no contiene secretos con forma de clave', async () => {
 test('el cliente no inserta HTML crudo y el Worker no integra calendario', async () => {
   const cliente = await leerDir(path.join(raiz, 'src'));
   assert.doesNotMatch(cliente, /innerHTML|insertAdjacentHTML|outerHTML|document\.write|eval\(|new Function/);
-  const worker = await leerDir(path.join(raiz, 'worker'));
+  const worker = await leerDir(path.join(raiz, 'worker'), new Set(['prompt-sistema.txt']));
   assert.doesNotMatch(worker, /calendar\.google|googleapis\.com\/calendar|innerHTML/);
   assert.doesNotMatch(worker, /Eres AVRA|You are AVRA|system prompt/i);
+  const prompt = await readFile(path.join(raiz, 'worker', 'prompt-sistema.txt'), 'utf8');
+  assert.match(prompt, /Eres AVRA/);
+  assert.match(prompt, /COFEPRIS/);
+  assert.match(prompt, /wa\.me\/529611919199/);
+  assert.doesNotMatch(prompt, /\$\s?\d/);
 });
 
 async function* archivos(directorio: string): AsyncGenerator<string> {
@@ -49,10 +54,10 @@ async function* archivos(directorio: string): AsyncGenerator<string> {
   }
 }
 
-async function leerDir(directorio: string): Promise<string> {
+async function leerDir(directorio: string, saltar = new Set<string>()): Promise<string> {
   let texto = '';
   for await (const archivo of archivos(directorio)) {
-    if (archivo.endsWith('.test.ts')) continue;
+    if (archivo.endsWith('.test.ts') || saltar.has(path.basename(archivo))) continue;
     texto += await readFile(archivo, 'utf8');
   }
   return texto;

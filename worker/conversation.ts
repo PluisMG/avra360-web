@@ -65,6 +65,26 @@ export class Conversation extends DurableObject<Env> {
     return { messageId, history: previas };
   }
 
+  async guardarAsistente(messageId: string, text: string): Promise<'ok' | 'desconocido' | 'usado'> {
+    this.asegurar();
+    const usuario = this.filas("SELECT id FROM messages WHERE id = ? AND role = 'user'", messageId);
+    if (usuario.length === 0) return 'desconocido';
+    const usado = this.filas('SELECT message_id FROM used_replies WHERE message_id = ?', messageId);
+    if (usado.length > 0) return 'usado';
+    const ahora = Date.now();
+    this.ctx.storage.sql.exec('INSERT INTO used_replies (message_id) VALUES (?)', messageId);
+    this.ctx.storage.sql.exec(
+      'INSERT INTO messages (id, role, text, reply_to, created_at) VALUES (?, ?, ?, ?, ?)',
+      crypto.randomUUID(),
+      'assistant',
+      text,
+      messageId,
+      ahora,
+    );
+    await this.ctx.storage.setAlarm(ahora + VIDA_CONVERSACION_MS);
+    return 'ok';
+  }
+
   async consumirRespuesta(messageId: string, text: string): Promise<'ok' | 'desconocido' | 'usado'> {
     this.asegurar();
     const usuario = this.filas("SELECT id FROM messages WHERE id = ? AND role = 'user'", messageId);
@@ -223,10 +243,10 @@ export class Conversation extends DurableObject<Env> {
     const cerrados = new Set<string>();
     for (const fila of filas) {
       this.emitirFrame('mensaje', { role: 'assistant', replyTo: fila.reply_to, text: fila.text });
-      if (!cerrados.has(fila.reply_to)) {
-        cerrados.add(fila.reply_to);
-        this.emitirFrame('fin', { messageId: fila.reply_to, traspaso: false });
-      }
+      cerrados.add(fila.reply_to);
+    }
+    for (const messageId of cerrados) {
+      this.emitirFrame('fin', { messageId, traspaso: false });
     }
   }
 

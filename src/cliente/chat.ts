@@ -1,5 +1,6 @@
 import {
   ESPERA_INICIAL_MS,
+  ESPERA_MAX_MS,
   TEXTO_CONFIGURACION,
   TEXTO_LENTO,
   esperaAgotada,
@@ -268,10 +269,12 @@ export function iniciarChat(): void {
     const decodificador = new TextDecoder();
     let resto = '';
     let texto = '';
+    let esperaConfirmacion = false;
     try {
       while (!esperaAgotada(inicio, Date.now())) {
         const paso = await leerConTope(lector, inicio);
         if (paso.done) break;
+        if (!paso.value) continue;
         resto += decodificador.decode(paso.value, { stream: true });
         const bloques = resto.split('\n\n');
         resto = bloques.pop() ?? '';
@@ -292,10 +295,22 @@ export function iniciarChat(): void {
             typeof evento.datos.text === 'string'
           ) {
             agregarMensaje('assistant', evento.datos.text);
+            if (esperaConfirmacion) return texto;
           }
-          if (evento.nombre === 'fin' && evento.datos.messageId === messageId && texto) return texto;
+          if (evento.nombre === 'fin' && evento.datos.messageId === messageId && texto) {
+            if (evento.datos.traspaso === true) {
+              esperaConfirmacion = true;
+              continue;
+            }
+            return texto;
+          }
         }
       }
+    } catch (error) {
+      if (error instanceof Error && error.message === 'lento' && texto && !esperaConfirmacion) return texto;
+      if (error instanceof Error && error.message === 'lento' && esperaConfirmacion) throw error;
+      if (texto && !esperaConfirmacion) return texto;
+      throw error;
     } finally {
       controlador.abort();
     }
@@ -415,19 +430,21 @@ function dormir(ms: number): Promise<void> {
   });
 }
 
-function leerConTope(
+async function leerConTope(
   lector: ReadableStreamDefaultReader<Uint8Array>,
   inicio: number,
 ): Promise<{ done: boolean; value?: Uint8Array }> {
   const restante = ESPERA_MAX_MS - (Date.now() - inicio);
-  if (restante <= 0) return Promise.reject(new Error('lento'));
+  if (restante <= 0) throw new Error('lento');
   let temporizador = 0;
   const tope = new Promise<never>((_, rechazar) => {
     temporizador = window.setTimeout(() => rechazar(new Error('lento')), restante);
   });
-  return Promise.race([lector.read(), tope]).finally(() => {
+  try {
+    return await Promise.race([lector.read(), tope]);
+  } finally {
     window.clearTimeout(temporizador);
-  });
+  }
 }
 
 function parsearEvento(bloque: string): { nombre: string; datos: Record<string, unknown> } | null {

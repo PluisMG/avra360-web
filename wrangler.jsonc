@@ -17,8 +17,11 @@
     "CHAT_ACTIVO": "0",
     "ALMACENAMIENTO_ACTIVO": "0",
     "AVISO_APROBADO": "0",
-    "PUBLIC_TURNSTILE_SITE_KEY": ""
+    "PUBLIC_TURNSTILE_SITE_KEY": "",
+    "CHAT_MODO": "avra",
+    "OPENAI_MODELO": "gpt-6-luna"
   },
+  "rules": [{ "type": "Text", "globs": ["**/*.txt"], "fallthrough": true }],
   "durable_objects": {
     "bindings": [
       { "name": "CONVERSATION", "class_name": "Conversation" },

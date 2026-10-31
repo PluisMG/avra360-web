@@ -1,6 +1,8 @@
 import { intentarArchivar } from './almacenamiento.ts';
 import { MAX_MENSAJE, MAX_RESPUESTA, SITIO, VIDA_TOKEN_SEG } from './constantes.ts';
 import { chatListo, textoEnv } from './entorno.ts';
+import { correrHibrido } from './hibrido.ts';
+import { usarHibrido } from './openai.ts';
 import { hashIp, ipDe } from './ip.ts';
 import { json, leerJson } from './json.ts';
 import { firmarToken, verificarToken } from './tokens.ts';
@@ -9,12 +11,12 @@ import { despertarAvra, type CuerpoWebhook } from './webhook.ts';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-export async function enrutar(request: Request, env: Env): Promise<Response | null> {
+export async function enrutar(request: Request, env: Env, ctx: ExecutionContext): Promise<Response | null> {
   const url = new URL(request.url);
   if (url.pathname === '/robots.txt') return null;
   if (!url.pathname.startsWith('/api/')) return null;
   if (request.method === 'POST' && url.pathname === '/api/csp-report') return postInformeCsp(request, env);
-  if (request.method === 'POST' && url.pathname === '/api/chat') return postChat(request, env);
+  if (request.method === 'POST' && url.pathname === '/api/chat') return postChat(request, env, ctx);
   if (request.method === 'POST' && url.pathname === '/api/chat/reply') return postReply(request, env);
   const eventos = url.pathname.match(/^\/api\/chat\/([0-9a-f-]{36})\/events$/i);
   if (request.method === 'GET' && eventos?.[1]) return getEventos(eventos[1], env);
@@ -35,7 +37,7 @@ async function postInformeCsp(request: Request, env: Env): Promise<Response> {
   return new Response(null, { status: 204 });
 }
 
-async function postChat(request: Request, env: Env): Promise<Response> {
+async function postChat(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
   const tipo = request.headers.get('content-type') ?? '';
   if (!tipo.includes('application/json')) return respuestaFormulario(request, env);
   if (!chatListo(env)) return json({ status: 'configurando' }, 503);
@@ -79,6 +81,15 @@ async function postChat(request: Request, env: Env): Promise<Response> {
     replyToken,
     site: SITIO,
   };
+  if (usarHibrido(env)) {
+    ctx.waitUntil(
+      correrHibrido(env, conversacion, cuerpo, messageId).catch((error: unknown) => {
+        console.log(JSON.stringify({ evento: 'error', nombre: error instanceof Error ? error.name : 'Error' }));
+      }),
+    );
+    console.log(JSON.stringify({ evento: 'chat_pendiente', conversationId, messageId }));
+    return json({ conversationId, messageId, status: 'pending' });
+  }
   const despierto = await despertarAvra(textoEnv(env, 'AVRA_WEBHOOK_URL'), textoEnv(env, 'AVRA_WEBHOOK_KEY'), cuerpo);
   if (despierto) await conversacion.anotarTiempo(conversationId, messageId, 't_webhook_ok', Date.now());
   await intentarArchivar(env, { consentimiento: false, conversationId });

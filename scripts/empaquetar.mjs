@@ -20,6 +20,7 @@ await build({
   target: 'es2022',
   outfile: path.join(store, 'worker.mjs'),
   external: ['cloudflare:workers'],
+  loader: { '.txt': 'text' },
 });
 
 const config = await readFile('worker-config.json', 'utf8');

@@ -36,6 +36,20 @@ El token de Turnstile se pide al enfocar el campo y de nuevo después de cada en
 
 La conversación vive en el Durable Object `Conversation` solo para retransmitir. Una alarma la borra a las 24 horas. La IP no se guarda: `RateLimiter` usa su hash (10 mensajes cada 10 minutos y 40 al día).
 
+## Chat híbrido
+
+`CHAT_MODO` vale `avra` (predeterminado) o `hibrido`. `OPENAI_MODELO` es el modelo; si se deja vacío, el Worker usa `gpt-6-luna` sin razonamiento (`reasoning.effort: none`).
+
+En `hibrido`, y solo si el secret `OPENAI_API_KEY` está cargado en Cloudflare, el Worker responde al visitante con la API Responses y empuja los tokens por el mismo SSE. Pedro carga esa llave en Cloudflare y conviene que ponga un tope de gasto mensual en la cuenta de OpenAI. La llave no va en este repositorio.
+
+Si falta la llave, el modo no es `hibrido`, OpenAI responde con error o el primer token tarda más de 8 segundos, ese mensaje sigue por el webhook de AVRA, sin un aviso de fallo.
+
+Cuando el modelo detecta un prospecto o una cita, llama a `pasar_a_avra`. El visitante ve: «Le paso tu solicitud a nuestro equipo; en unos segundos te confirmo por aquí.» El Worker despierta a AVRA en segundo plano con el resumen. La confirmación entra por el `POST /api/chat/reply` firmado y se empuja al navegador.
+
+El prompt está en `worker/prompt-sistema.txt`. No da precios ni rangos, no promete curas y no pide datos sensibles. El historial que se manda cabe en unos 10 turnos y se borra con la conversación, a las 24 horas. La salida del modelo queda cerca de 300 tokens. Siguen valiendo los límites de 10 mensajes cada 10 minutos y 40 al día por IP.
+
+No hace falta una migración nueva de Durable Objects: `Conversation` y `RateLimiter` siguen en la migración `v1`. Las tablas nuevas se crean con `CREATE TABLE IF NOT EXISTS` dentro del objeto.
+
 Mientras falte algo de la tabla, la caja sigue visible y dice: «El chat con AVRA está en configuración. Muy pronto podrás conversar aquí.» No se simula una respuesta.
 
 ## Almacenamiento, apagado

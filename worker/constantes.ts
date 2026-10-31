@@ -9,4 +9,6 @@ export const VENTANA_MINUTO_MS = 10 * 60 * 1000;
 export const LIMITE_DIA = 40;
 export const VENTANA_DIA_MS = 24 * 60 * 60 * 1000;
 export const TIMEOUT_WEBHOOK_MS = 8_000;
+export const TIMEOUT_PRIMER_TOKEN_MS = 8_000;
+export const MAX_SALIDA_MODELO = 300;
 export const AVISO_VERSION = 'aviso-borrador-2026-10-29';

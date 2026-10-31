@@ -7,6 +7,8 @@ interface __BaseEnv_Env {
 	ALMACENAMIENTO_ACTIVO: "0";
 	AVISO_APROBADO: "0";
 	PUBLIC_TURNSTILE_SITE_KEY: "";
+	CHAT_MODO: string;
+	OPENAI_MODELO: string;
 	CONVERSATION: DurableObjectNamespace<import("./worker/index").Conversation>;
 	RATE_LIMITER: DurableObjectNamespace<import("./worker/index").RateLimiter>;
 }
@@ -22,7 +24,7 @@ type StringifyValues<EnvType extends Record<string, unknown>> = {
 	[Binding in keyof EnvType]: EnvType[Binding] extends string ? EnvType[Binding] : string;
 };
 declare namespace NodeJS {
-	interface ProcessEnv extends StringifyValues<Pick<Cloudflare.Env, "PREVIEW" | "CHAT_ACTIVO" | "ALMACENAMIENTO_ACTIVO" | "AVISO_APROBADO" | "PUBLIC_TURNSTILE_SITE_KEY">> {}
+	interface ProcessEnv extends StringifyValues<Pick<Cloudflare.Env, "PREVIEW" | "CHAT_ACTIVO" | "ALMACENAMIENTO_ACTIVO" | "AVISO_APROBADO" | "PUBLIC_TURNSTILE_SITE_KEY" | "CHAT_MODO" | "OPENAI_MODELO">> {}
 }
 declare module "*.txt" {
 	const value: string;

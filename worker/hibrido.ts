@@ -1,0 +1,90 @@
+import { intentarArchivar } from './almacenamiento.ts';
+import type { Conversation } from './conversation.ts';
+import { VIDA_TOKEN_SEG } from './constantes.ts';
+import { textoEnv } from './entorno.ts';
+import { hablarConModelo, mensajeParaAvra, modeloDe, timeoutPrimerToken, type PedidoAvra } from './openai.ts';
+import { firmarToken } from './tokens.ts';
+import { despertarAvra, type CuerpoWebhook } from './webhook.ts';
+
+type StubConversacion = DurableObjectStub<Conversation>;
+
+export async function correrHibrido(
+  env: Env,
+  conversacion: StubConversacion,
+  cuerpo: CuerpoWebhook,
+  messageId: string,
+): Promise<void> {
+  const deltas: string[] = [];
+  const resultado = await hablarConModelo({
+    apiKey: textoEnv(env, 'OPENAI_API_KEY'),
+    modelo: modeloDe(env),
+    historial: cuerpo.history,
+    mensaje: cuerpo.message,
+    timeoutMs: timeoutPrimerToken(env),
+    alDelta: async (fragmento) => {
+      deltas.push(fragmento);
+      await conversacion.emitir('delta', { messageId, text: fragmento });
+    },
+  });
+
+  if (!resultado.ok) {
+    await conversacion.anotarTiempo(cuerpo.conversationId, messageId, 't_fin', Date.now(), 1);
+    await despertarYArchivar(env, conversacion, cuerpo, messageId);
+    return;
+  }
+
+  const guardado = await conversacion.guardarAsistente(messageId, resultado.texto);
+  if (guardado !== 'ok') {
+    await conversacion.anotarTiempo(cuerpo.conversationId, messageId, 't_fin', Date.now(), 1);
+    await despertarYArchivar(env, conversacion, cuerpo, messageId);
+    return;
+  }
+
+  await conversacion.anotarTiempo(cuerpo.conversationId, messageId, 't_primer_token', resultado.tPrimerToken);
+  await conversacion.anotarTiempo(cuerpo.conversationId, messageId, 't_fin', resultado.tFin, 0);
+  await conversacion.emitir('mensaje', { role: 'assistant', replyTo: messageId, text: resultado.texto });
+  await conversacion.emitir('fin', { messageId, traspaso: resultado.traspaso !== null });
+  await conversacion.marcarEntregas(false);
+  await intentarArchivar(env, { consentimiento: false, conversationId: cuerpo.conversationId });
+
+  if (resultado.traspaso) await pasarAAvra(env, conversacion, cuerpo, resultado.traspaso);
+}
+
+async function pasarAAvra(
+  env: Env,
+  conversacion: StubConversacion,
+  anterior: CuerpoWebhook,
+  pedido: PedidoAvra,
+): Promise<void> {
+  const resumen = mensajeParaAvra(pedido);
+  const { messageId, history } = await conversacion.agregarUsuario(resumen);
+  await conversacion.anotarTiempo(anterior.conversationId, messageId, 't_recibido', Date.now());
+  const expira = Math.floor(Date.now() / 1000) + VIDA_TOKEN_SEG;
+  const replyToken = await firmarToken(textoEnv(env, 'AVRA_REPLY_SIGNING_SECRET'), {
+    v: 1,
+    c: anterior.conversationId,
+    m: messageId,
+    e: expira,
+  });
+  const cuerpo: CuerpoWebhook = {
+    conversationId: anterior.conversationId,
+    message: resumen,
+    history,
+    replyUrl: anterior.replyUrl,
+    replyToken,
+    site: anterior.site,
+  };
+  await despertarYArchivar(env, conversacion, cuerpo, messageId);
+}
+
+async function despertarYArchivar(
+  env: Env,
+  conversacion: StubConversacion,
+  cuerpo: CuerpoWebhook,
+  messageId: string,
+): Promise<boolean> {
+  const despierto = await despertarAvra(textoEnv(env, 'AVRA_WEBHOOK_URL'), textoEnv(env, 'AVRA_WEBHOOK_KEY'), cuerpo);
+  if (despierto) await conversacion.anotarTiempo(cuerpo.conversationId, messageId, 't_webhook_ok', Date.now());
+  await intentarArchivar(env, { consentimiento: false, conversationId: cuerpo.conversationId });
+  return despierto;
+}

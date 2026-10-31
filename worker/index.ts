@@ -9,7 +9,7 @@ export { RateLimiter } from './limitador.ts';
 const SITE_KEY = /^[0-9A-Za-z_-]{8,200}$/;
 
 export default {
-  async fetch(request, env): Promise<Response> {
+  async fetch(request, env, ctx): Promise<Response> {
     const url = new URL(request.url);
     try {
       const destino = canonica(url.pathname);
@@ -19,7 +19,7 @@ export default {
         return conSeguridad(Response.redirect(redirige.toString(), 301), env);
       }
       if (url.pathname === '/robots.txt') return conSeguridad(robots(env), env);
-      const api = await enrutar(request, env);
+      const api = await enrutar(request, env, ctx);
       if (api) return conSeguridad(api, env);
       if (url.pathname.startsWith('/api/')) return conSeguridad(json({ status: 'no-encontrado' }, 404), env);
       const asset = await env.ASSETS.fetch(request);
