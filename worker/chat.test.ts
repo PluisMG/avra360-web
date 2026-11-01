@@ -335,6 +335,16 @@ describe('activos y encabezados', () => {
     expect(html).toContain('id="nota-config" hidden');
     expect(html).not.toContain('secreto-turnstile-de-prueba');
     expect(html).not.toContain('llave-webhook-de-prueba');
+    expect(respuesta.headers.get('cache-control')).toBe('no-cache');
+    const src = html.match(/<script[^>]+src="(\/_astro\/[^"]+\.[A-Za-z0-9_-]{8,}\.js)"/)?.[1];
+    expect(src).toBeTruthy();
+    expect(html).not.toContain('src="/chat.js"');
+    const script = await pedir(`https://avra360.example${src}`);
+    expect(script.status).toBe(200);
+    expect(script.headers.get('cache-control')).toBe('public, max-age=31536000, immutable');
+    const viejo = await pedir('https://avra360.example/chat.js');
+    expect(viejo.status).toBe(404);
+    expect(viejo.headers.get('cache-control')).toBe('no-cache');
   });
 });
 

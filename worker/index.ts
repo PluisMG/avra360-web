@@ -47,11 +47,33 @@ async function prepararHtml(respuesta: Response, env: Env): Promise<Response> {
 }
 
 function cacheEstatico(respuesta: Response, pathname: string): Response {
-  const marcaOFavicon = pathname.startsWith('/brand/') || pathname === '/favicon.ico' || pathname === '/favicon.svg';
-  if (!marcaOFavicon) return respuesta;
   const headers = new Headers(respuesta.headers);
-  // _headers también pone max-age en /brand/*, incluso si el archivo no existe.
-  headers.set('cache-control', respuesta.ok ? 'public, max-age=604800' : 'no-store');
+  const tipo = (headers.get('content-type') ?? '').toLowerCase();
+  const marcaOFavicon = pathname.startsWith('/brand/') || pathname === '/favicon.ico' || pathname === '/favicon.svg';
+  if (marcaOFavicon) {
+    // _headers también pone max-age en /brand/*, incluso si el archivo no existe.
+    headers.set('cache-control', respuesta.ok ? 'public, max-age=604800' : 'no-store');
+    return copiar(respuesta, headers);
+  }
+  const conHash = /^\/_astro\/.+\.[A-Za-z0-9_-]{8,}\.(?:js|css|woff2)$/.test(pathname);
+  if (respuesta.ok && conHash) {
+    headers.set('cache-control', 'public, max-age=31536000, immutable');
+    return copiar(respuesta, headers);
+  }
+  const htmlOJs =
+    tipo.includes('text/html') ||
+    tipo.includes('javascript') ||
+    pathname === '/' ||
+    pathname.endsWith('.html') ||
+    pathname.endsWith('.js');
+  if (htmlOJs) {
+    headers.set('cache-control', 'no-cache');
+    return copiar(respuesta, headers);
+  }
+  return respuesta;
+}
+
+function copiar(respuesta: Response, headers: Headers): Response {
   return new Response(respuesta.body, {
     status: respuesta.status,
     statusText: respuesta.statusText,

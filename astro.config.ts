@@ -65,8 +65,9 @@ function revisarPublicacion(): AstroIntegration {
             const atributos = script[1] ?? '';
             const cuerpo = (script[2] ?? '').trim();
             if (cuerpo) throw new Error(`Hay un script en línea en ${archivo}.`);
-            if (!/\bsrc="\/chat\.js"/.test(atributos) || !/\btype="module"/.test(atributos)) {
-              throw new Error(`El único script permitido es el módulo /chat.js. Revisar ${archivo}.`);
+            const src = atributos.match(/\bsrc="([^"]+)"/)?.[1] ?? '';
+            if (!/\btype="module"/.test(atributos) || !/^\/_astro\/[^"]+\.[A-Za-z0-9_-]{8,}\.js$/.test(src)) {
+              throw new Error(`El script del chat debe publicarse con hash en /_astro/. Revisar ${archivo}: ${src}`);
             }
           }
         }
@@ -91,8 +92,14 @@ function revisarPublicacion(): AstroIntegration {
           '/_astro/*',
           '  Cache-Control: public, max-age=31536000, immutable',
           '',
-          '/chat.js',
-          '  Cache-Control: public, max-age=3600',
+          '/',
+          '  Cache-Control: no-cache',
+          '',
+          '/aviso-de-privacidad',
+          '  Cache-Control: no-cache',
+          '',
+          '/404.html',
+          '  Cache-Control: no-cache',
           '',
           '/brand/*',
           '  Cache-Control: public, max-age=604800',

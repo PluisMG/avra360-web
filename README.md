@@ -13,7 +13,7 @@ npm run test:e2e
 npm run preview
 ```
 
-`npm run build` deja el cliente en `public/chat.js` y el sitio en `dist/`. Inter se autoaloja en woff2, subset latino, con `font-display: swap`. No hay Google Fonts en tiempo de ejecución.
+`npm run build` deja el sitio en `dist/`. El cliente del chat lo empaqueta Astro en `/_astro/` con hash en el nombre. El HTML sale con `no-cache`; los archivos con hash, con caché larga. Inter se autoaloja en woff2, subset latino, con `font-display: swap`. No hay Google Fonts en tiempo de ejecución.
 
 ## Chat
 

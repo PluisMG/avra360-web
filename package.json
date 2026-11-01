@@ -8,8 +8,6 @@
   },
   "scripts": {
     "dev": "astro dev",
-    "predev": "node scripts/cliente.mjs",
-    "prebuild": "node scripts/cliente.mjs",
     "build": "astro build",
     "preview": "astro preview --host 127.0.0.1",
     "check": "astro check && tsc -p worker/tsconfig.json --noEmit",
