@@ -107,7 +107,6 @@ export class Conversation extends DurableObject<Env> {
     if (conversationId) {
       this.ctx.storage.sql.exec('INSERT OR IGNORE INTO tiempos (message_id) VALUES (?)', messageId);
       this.escribirCampo('t_respuesta', ahora, messageId);
-      this.logFila(conversationId, messageId);
     }
     this.emitirFrame('mensaje', { role: 'assistant', replyTo: messageId, text });
     this.emitirFrame('fin', { messageId, traspaso: false });
@@ -129,7 +128,11 @@ export class Conversation extends DurableObject<Env> {
     if (fallback !== undefined) {
       this.ctx.storage.sql.exec('UPDATE tiempos SET fallback = ? WHERE message_id = ?', fallback, messageId);
     }
-    this.logFila(conversationId, messageId);
+  }
+
+  async publicarTiempo(conversationId: string, messageId: string): Promise<void> {
+    this.asegurar();
+    this.publicar(conversationId, messageId);
   }
 
   marcarEntregas(forzar: boolean): void {
@@ -153,7 +156,7 @@ export class Conversation extends DurableObject<Env> {
         ahora,
         fila.message_id,
       );
-      this.logFila(conversationId, fila.message_id);
+      this.publicar(conversationId, fila.message_id);
     }
   }
 
@@ -209,8 +212,13 @@ export class Conversation extends DurableObject<Env> {
       t_entregado INTEGER,
       t_primer_token INTEGER,
       t_fin INTEGER,
-      fallback INTEGER
+      fallback INTEGER,
+      logueado INTEGER
     )`);
+    const columnas = this.filas<{ name: string }>('PRAGMA table_info(tiempos)');
+    if (!columnas.some((columna) => columna.name === 'logueado')) {
+      this.ctx.storage.sql.exec('ALTER TABLE tiempos ADD COLUMN logueado INTEGER');
+    }
   }
 
   private abrirSse(messageId: string | null): Response {
@@ -314,7 +322,7 @@ export class Conversation extends DurableObject<Env> {
     return filas[0]?.valor ?? null;
   }
 
-  private logFila(conversationId: string, messageId: string): void {
+  private publicar(conversationId: string, messageId: string): void {
     const fila = this.filas<{
       t_recibido: number | null;
       t_webhook_ok: number | null;
@@ -323,12 +331,14 @@ export class Conversation extends DurableObject<Env> {
       t_primer_token: number | null;
       t_fin: number | null;
       fallback: number | null;
+      logueado: number | null;
     }>(
-      `SELECT t_recibido, t_webhook_ok, t_respuesta, t_entregado, t_primer_token, t_fin, fallback
+      `SELECT t_recibido, t_webhook_ok, t_respuesta, t_entregado, t_primer_token, t_fin, fallback, logueado
        FROM tiempos WHERE message_id = ?`,
       messageId,
     )[0];
-    if (!fila) return;
+    if (!fila || fila.logueado === 1) return;
+    this.ctx.storage.sql.exec('UPDATE tiempos SET logueado = 1 WHERE message_id = ?', messageId);
     const marcas: MarcasTiempo = {
       t_recibido: numeroONulo(fila.t_recibido),
       t_webhook_ok: numeroONulo(fila.t_webhook_ok),

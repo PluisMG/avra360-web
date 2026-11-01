@@ -29,7 +29,12 @@ beforeEach(() => {
     }
     if (url === 'https://api.openai.com/v1/responses') {
       red.llamadas.push({ url, init: init ?? {} });
-      if (red.estado !== 200) return new Response('no', { status: red.estado });
+      if (red.estado !== 200) {
+        return Response.json(
+          { error: { message: 'detalle interno que no se registra', code: 'server_error' } },
+          { status: red.estado },
+        );
+      }
       if (red.modo === 'cuelga') {
         await new Promise((_resolver, rechazar) => {
           const senal = init?.signal;
@@ -65,12 +70,19 @@ describe('selección de modo', () => {
 
   it('sin llave, o fuera de hibrido, despierta a AVRA', async () => {
     red.llamadas = [];
+    const registros = espiar();
     const sinLlave = await postChat('Hola', ipNueva(), { ...env, CHAT_MODO: 'hibrido', OPENAI_API_KEY: '' });
     expect(sinLlave.status).toBe(200);
     const enAvra = await postChat('Hola', ipNueva(), { ...env, CHAT_MODO: 'avra', OPENAI_API_KEY: 'sk-prueba' });
     expect(enAvra.status).toBe(200);
     expect(red.llamadas.every((llamada) => llamada.url.startsWith('https://webhook.test/avra'))).toBe(true);
     expect(red.llamadas).toHaveLength(2);
+    const motivos = registros.lineas
+      .map((linea) => JSON.parse(linea) as { evento?: string; motivo?: string })
+      .filter((dato) => dato.evento === 'fallback')
+      .map((dato) => dato.motivo);
+    expect(motivos).toEqual(['sin_clave', 'modo']);
+    registros.restaurar();
   });
 });
 
@@ -86,15 +98,37 @@ describe('respaldo', () => {
       'https://api.openai.com/v1/responses',
       'https://webhook.test/avra',
     ]);
-    const tiempos = marcas(registros, 'Hola');
-    expect(tiempos.some((dato) => dato.fallback === true)).toBe(true);
-    expect(JSON.stringify(tiempos)).not.toContain('Hola');
+    const eventos = registros.lineas.map((linea) => JSON.parse(linea) as Record<string, unknown>);
+    expect(eventos.find((dato) => dato.evento === 'openai_error')).toMatchObject({
+      status: 500,
+      codigo: 'server_error',
+      modelo: 'gpt-6-luna',
+    });
+    expect(eventos.find((dato) => dato.evento === 'fallback')).toMatchObject({ motivo: 'error' });
+    expect(JSON.stringify(eventos)).not.toContain('detalle interno');
+    expect(JSON.stringify(eventos)).not.toContain('Hola');
+    const reply = JSON.parse(String(red.llamadas.at(-1)?.init.body)) as { replyToken: string };
+    const pendiente = (await respuesta.json()) as { conversationId: string; messageId: string };
+    expect((await postReply(reply.replyToken, 'PRUEBA por AVRA')).status).toBe(200);
+    expect((await getStream(pendiente.conversationId, pendiente.messageId)).status).toBe(200);
+    const tiempos = eventos
+      .concat(registros.lineas.slice(eventos.length).map((linea) => JSON.parse(linea) as Record<string, unknown>))
+      .filter((dato) => dato.evento === 'chat_tiempo' && dato.messageId === pendiente.messageId);
+    expect(tiempos).toHaveLength(1);
+    expect(tiempos[0]).toMatchObject({ fallback: true, conversationId: pendiente.conversationId });
+    expect(tiempos[0]?.t_recibido).toEqual(expect.any(Number));
+    expect(tiempos[0]?.t_webhook_ok).toEqual(expect.any(Number));
+    expect(tiempos[0]?.t_fin).toEqual(expect.any(Number));
+    expect(tiempos[0]?.t_respuesta).toEqual(expect.any(Number));
+    expect(tiempos[0]?.t_entregado).toEqual(expect.any(Number));
+    expect(JSON.stringify(tiempos)).not.toContain('PRUEBA por AVRA');
     registros.restaurar();
   });
 
   it('si el primer token no llega, cae al webhook', async () => {
     red.llamadas = [];
     red.modo = 'cuelga';
+    const registros = espiar();
     const respuesta = await postChat('Hola', ipNueva(), entorno({ CHAT_TIMEOUT_TOKEN_MS: '40' }));
     red.modo = 'texto';
     expect(respuesta.status).toBe(200);
@@ -104,6 +138,14 @@ describe('respaldo', () => {
     ]);
     const cuerpo = JSON.parse(String(red.llamadas[1]?.init.body)) as { message: string };
     expect(cuerpo.message).toBe('Hola');
+    const motivos = registros.lineas
+      .map((linea) => JSON.parse(linea) as { evento?: string; motivo?: string })
+      .filter((dato) => dato.evento === 'fallback')
+      .map((dato) => dato.motivo);
+    expect(motivos).toEqual(['timeout']);
+    expect(registros.lineas.join('\n')).not.toContain('openai_error');
+    expect(registros.lineas.join('\n')).not.toContain('Hola');
+    registros.restaurar();
   });
 });
 
@@ -139,9 +181,12 @@ describe('streaming', () => {
     expect(crudo).toContain('event: delta');
     expect(crudo).toContain('Eco Buen día');
     const tiempos = marcas(registros).filter((dato) => dato.messageId === pendiente.messageId);
-    const fin = tiempos.find((dato) => dato.t_fin != null);
+    expect(tiempos).toHaveLength(1);
+    const fin = tiempos[0];
     expect(fin?.t_recibido).toEqual(expect.any(Number));
     expect(fin?.t_primer_token).toEqual(expect.any(Number));
+    expect(fin?.t_fin).toEqual(expect.any(Number));
+    expect(fin?.t_entregado).toEqual(expect.any(Number));
     expect(fin?.fallback).toBe(false);
     expect(fin?.ms_primer_token).toBe(Number(fin?.t_primer_token) - Number(fin?.t_recibido));
     expect(JSON.stringify(tiempos)).not.toContain('Buen día');
@@ -196,6 +241,7 @@ describe('traspaso', () => {
   it('pasar_a_avra despierta a AVRA y la confirmación firmada se empuja', async () => {
     red.llamadas = [];
     red.modo = 'herramienta';
+    const registros = espiar();
     const creado = await postChat('Quiero una cita el martes', ipNueva(), entorno());
     red.modo = 'texto';
     const pendiente = (await creado.json()) as { conversationId: string; messageId: string };
@@ -219,6 +265,15 @@ describe('traspaso', () => {
     expect(crudo).toContain(TEXTO_TRASPASO);
     expect(crudo).toContain('PRUEBA cita anotada');
     expect(crudo).toContain('"traspaso":true');
+    const avisos = registros.lineas
+      .map((linea) => JSON.parse(linea) as { evento?: string; motivo?: string; estado?: number; messageId?: string })
+      .filter((dato) => dato.evento === 'traspaso_avra');
+    expect(avisos).toEqual([
+      expect.objectContaining({ motivo: 'cita', estado: 200, conversationId: pendiente.conversationId }),
+    ]);
+    expect(JSON.stringify(avisos)).not.toContain('martes');
+    expect(JSON.stringify(avisos)).not.toContain('Quiere una cita');
+    registros.restaurar();
   });
 });
 

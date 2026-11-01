@@ -102,7 +102,13 @@ export async function hablarConModelo(opciones: {
       }),
       signal: controlador.signal,
     });
-    if (!respuesta.ok || !respuesta.body) return { ok: false, motivo: 'http' };
+    if (!respuesta.ok || !respuesta.body) {
+      const codigo = respuesta.body ? await codigoDeError(respuesta) : '';
+      console.log(
+        JSON.stringify({ evento: 'openai_error', status: respuesta.status, codigo, modelo: opciones.modelo }),
+      );
+      return { ok: false, motivo: 'http' };
+    }
 
     const lector = respuesta.body.getReader();
     const decodificador = new TextDecoder();
@@ -179,6 +185,18 @@ export function interpretarTraspaso(crudo: string): PedidoAvra | null {
   } catch {
     return null;
   }
+}
+
+async function codigoDeError(respuesta: Response): Promise<string> {
+  try {
+    const data = (await respuesta.json()) as { error?: { code?: unknown } };
+    const codigo = data.error?.code;
+    if (typeof codigo === 'string') return codigo.slice(0, 64);
+    if (typeof codigo === 'number' && Number.isFinite(codigo)) return String(codigo);
+  } catch {
+    return '';
+  }
+  return '';
 }
 
 function leerEvento(bloque: string): Record<string, unknown> | null {

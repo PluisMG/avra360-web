@@ -30,7 +30,7 @@ npm run preview
 
 El webhook es un POST, cuerpo JSON, timeout de 8 segundos y un solo intento. Responde 200 cuando AVRA despierta y no trae la respuesta. AVRA devuelve `{ replyToken, text }` a `POST /api/chat/reply`. El Durable Object `Conversation` empuja esa respuesta por SSE en `GET /api/chat/:conversationId/stream`. Si el flujo no abre, el navegador vuelve al sondeo de `GET /api/chat/:conversationId/events` (2 segundos y backoff). A los 3 minutos la interfaz dice: «AVRA está tardando más de lo normal». `connect-src` es `'self' https://challenges.cloudflare.com`, que es el origen al que Turnstile se conecta.
 
-Cada mensaje deja un log `chat_tiempo` con `t_recibido`, `t_webhook_ok`, `t_respuesta`, `t_entregado` y las duraciones en milisegundos. Solo van identificadores y milisegundos, sin texto ni datos personales.
+Cada mensaje deja una sola línea `chat_tiempo`, al entregarse, con los tiempos finales y las duraciones en milisegundos. `fallback` dice `sin_clave`, `modo`, `error` o `timeout`. `openai_error` lleva el estado HTTP, el código y el modelo. `traspaso_avra` lleva el motivo y el estado HTTP del webhook. En esos logs solo hay identificadores, códigos y milisegundos, sin texto ni datos personales.
 
 El token de Turnstile se pide al enfocar el campo y de nuevo después de cada envío. Cada token se usa una sola vez.
 

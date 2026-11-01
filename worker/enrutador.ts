@@ -7,7 +7,7 @@ import { hashIp, ipDe } from './ip.ts';
 import { json, leerJson } from './json.ts';
 import { firmarToken, verificarToken } from './tokens.ts';
 import { verificarTurnstile } from './turnstile.ts';
-import { despertarAvra, type CuerpoWebhook } from './webhook.ts';
+import { despertarAvra, webhookAceptado, type CuerpoWebhook } from './webhook.ts';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -90,10 +90,21 @@ async function postChat(request: Request, env: Env, ctx: ExecutionContext): Prom
     console.log(JSON.stringify({ evento: 'chat_pendiente', conversationId, messageId }));
     return json({ conversationId, messageId, status: 'pending' });
   }
-  const despierto = await despertarAvra(textoEnv(env, 'AVRA_WEBHOOK_URL'), textoEnv(env, 'AVRA_WEBHOOK_KEY'), cuerpo);
-  if (despierto) await conversacion.anotarTiempo(conversationId, messageId, 't_webhook_ok', Date.now());
+  console.log(
+    JSON.stringify({
+      evento: 'fallback',
+      conversationId,
+      messageId,
+      motivo: textoEnv(env, 'CHAT_MODO') === 'hibrido' ? 'sin_clave' : 'modo',
+    }),
+  );
+  const estadoWebhook = await despertarAvra(textoEnv(env, 'AVRA_WEBHOOK_URL'), textoEnv(env, 'AVRA_WEBHOOK_KEY'), cuerpo);
+  if (webhookAceptado(estadoWebhook)) await conversacion.anotarTiempo(conversationId, messageId, 't_webhook_ok', Date.now());
   await intentarArchivar(env, { consentimiento: false, conversationId });
-  if (!despierto) return json({ status: 'error', conversationId, messageId }, 502);
+  if (!webhookAceptado(estadoWebhook)) {
+    await conversacion.publicarTiempo(conversationId, messageId);
+    return json({ status: 'error', conversationId, messageId }, 502);
+  }
   console.log(JSON.stringify({ evento: 'chat_pendiente', conversationId, messageId }));
   return json({ conversationId, messageId, status: 'pending' });
 }

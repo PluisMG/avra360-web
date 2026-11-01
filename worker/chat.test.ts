@@ -213,7 +213,8 @@ describe('chat activo', () => {
     const tiempos = registros
       .map((linea) => JSON.parse(linea) as Record<string, unknown>)
       .filter((dato) => dato.evento === 'chat_tiempo' && dato.messageId === pendiente.messageId);
-    const completo = tiempos.find((dato) => dato.t_entregado != null);
+    expect(tiempos).toHaveLength(1);
+    const completo = tiempos[0];
     expect(completo?.conversationId).toBe(pendiente.conversationId);
     expect(completo?.t_recibido).toEqual(expect.any(Number));
     expect(completo?.t_webhook_ok).toEqual(expect.any(Number));

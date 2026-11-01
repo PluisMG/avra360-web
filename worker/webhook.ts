@@ -11,7 +11,7 @@ export type CuerpoWebhook = {
   site: typeof SITIO;
 };
 
-export async function despertarAvra(url: string, key: string, cuerpo: CuerpoWebhook): Promise<boolean> {
+export async function despertarAvra(url: string, key: string, cuerpo: CuerpoWebhook): Promise<number | null> {
   try {
     const respuesta = await fetch(url, {
       method: 'POST',
@@ -23,8 +23,12 @@ export async function despertarAvra(url: string, key: string, cuerpo: CuerpoWebh
       body: JSON.stringify(cuerpo),
       signal: AbortSignal.timeout(TIMEOUT_WEBHOOK_MS),
     });
-    return respuesta.ok;
+    return respuesta.status;
   } catch {
-    return false;
+    return null;
   }
+}
+
+export function webhookAceptado(estado: number | null): boolean {
+  return estado !== null && estado >= 200 && estado < 300;
 }
