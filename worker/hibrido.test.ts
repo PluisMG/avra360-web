@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { MAX_SALIDA_MODELO } from './constantes.ts';
 import worker from './index.ts';
 import { hashIp } from './ip.ts';
-import { INSTRUCCIONES, MODELO_PREDETERMINADO, TEXTO_TRASPASO, modeloDe, usarHibrido } from './openai.ts';
+import { HERRAMIENTA, INSTRUCCIONES, MODELO_PREDETERMINADO, TEXTO_TRASPASO, modeloDe, textoVisible, usarHibrido } from './openai.ts';
 
 const IncomingRequest = Request<unknown, IncomingRequestCfProperties>;
 
@@ -150,6 +150,48 @@ describe('streaming', () => {
   });
 });
 
+describe('preguntas que responde el modelo', () => {
+  const preguntas = [
+    '¿Cuánto cuesta el manejo de redes?',
+    '¿Me garantizan más pacientes y que mis tratamientos curan?',
+  ];
+
+  it('no pasa a AVRA un precio ni una garantía, y el pedido lo dice', async () => {
+    expect(textoVisible('', true)).not.toBe(TEXTO_TRASPASO);
+    expect(textoVisible('', true)).toContain(TEXTO_TRASPASO);
+    expect(textoVisible('La cotización es personalizada.', true)).toContain('personalizada');
+    expect(textoVisible(`Ya lo anoté.\n${TEXTO_TRASPASO}`, true).split(TEXTO_TRASPASO).length - 1).toBe(1);
+
+    for (const pregunta of preguntas) {
+      red.llamadas = [];
+      red.modo = 'texto';
+      const creado = await postChat(pregunta, ipNueva(), entorno());
+      expect(creado.status).toBe(200);
+      expect(red.llamadas.map((llamada) => llamada.url)).toEqual(['https://api.openai.com/v1/responses']);
+      const pedido = JSON.parse(String(red.llamadas[0]?.init.body)) as {
+        instructions: string;
+        input: { role: string; content: string }[];
+        tools: { name: string; description: string }[];
+      };
+      expect(pedido.input.at(-1)?.content).toBe(pregunta);
+      expect(pedido.instructions).toBe(INSTRUCCIONES);
+      expect(pedido.instructions).toContain('respóndelos tú');
+      expect(pedido.instructions).toContain('La cotización es personalizada');
+      expect(pedido.instructions).toContain('https://wa.me/529611919199');
+      expect(pedido.instructions).toContain('COFEPRIS');
+      expect(pedido.instructions).toContain('No garantices resultados');
+      expect(pedido.instructions).not.toContain('llama a pasar_a_avra con motivo');
+      expect(pedido.tools[0]).toEqual(HERRAMIENTA);
+      expect(pedido.tools[0]?.description).toContain('solo si la persona pide explícitamente una cita');
+      expect(pedido.tools[0]?.description).toContain('No la uses para preguntas de precio');
+      const flujo = await getStream(((await creado.clone().json()) as { conversationId: string }).conversationId);
+      const crudo = await leerHasta(flujo, 'event: fin');
+      expect(crudo).toContain(`Eco ${pregunta}`);
+      expect(crudo).not.toContain(TEXTO_TRASPASO);
+    }
+  });
+});
+
 describe('traspaso', () => {
   it('pasar_a_avra despierta a AVRA y la confirmación firmada se empuja', async () => {
     red.llamadas = [];
@@ -167,7 +209,9 @@ describe('traspaso', () => {
     expect(cuerpo.message).toContain('Solicitud de cita');
     expect(cuerpo.message).toContain('martes 10:00');
     expect(cuerpo.history.some((turno) => turno.text === 'Quiero una cita el martes')).toBe(true);
+    expect(cuerpo.history.some((turno) => turno.text.includes('Con gusto'))).toBe(true);
     expect(cuerpo.history.some((turno) => turno.text.includes(TEXTO_TRASPASO))).toBe(true);
+    expect(cuerpo.history.some((turno) => turno.text.trim() === TEXTO_TRASPASO)).toBe(false);
 
     expect((await postReply(cuerpo.replyToken, 'PRUEBA cita anotada')).status).toBe(200);
     const flujo = await getStream(pendiente.conversationId);

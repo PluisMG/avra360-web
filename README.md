@@ -44,7 +44,7 @@ En `hibrido`, y solo si el secret `OPENAI_API_KEY` está cargado en Cloudflare, 
 
 Si falta la llave, el modo no es `hibrido`, OpenAI responde con error o el primer token tarda más de 8 segundos, ese mensaje sigue por el webhook de AVRA, sin un aviso de fallo.
 
-Cuando el modelo detecta un prospecto o una cita, llama a `pasar_a_avra`. El visitante ve: «Le paso tu solicitud a nuestro equipo; en unos segundos te confirmo por aquí.» El Worker despierta a AVRA en segundo plano con el resumen. La confirmación entra por el `POST /api/chat/reply` firmado y se empuja al navegador.
+`pasar_a_avra` solo se usa si la persona pide una cita o una reunión, o si pide que la contacten o que le envíen una cotización. Preguntas de precio, garantías o salud las responde el modelo, sin cifras y sin prometer curas. Si hay traspaso, el visitante ve esa respuesta y después: «Le paso tu solicitud a nuestro equipo; en unos segundos te confirmo por aquí.» El Worker despierta a AVRA en segundo plano con el resumen. La confirmación entra por el `POST /api/chat/reply` firmado y se empuja al navegador.
 
 El prompt está en `worker/prompt-sistema.txt`. No da precios ni rangos, no promete curas y no pide datos sensibles. El historial que se manda cabe en unos 10 turnos y se borra con la conversación, a las 24 horas. La salida del modelo queda cerca de 300 tokens. Siguen valiendo los límites de 10 mensajes cada 10 minutos y 40 al día por IP.
 

@@ -18,11 +18,11 @@ export type ResultadoModelo =
   | { ok: true; texto: string; traspaso: PedidoAvra | null; tPrimerToken: number; tFin: number }
   | { ok: false; motivo: 'http' | 'timeout' | 'red' };
 
-const HERRAMIENTA = {
+export const HERRAMIENTA = {
   type: 'function',
   name: 'pasar_a_avra',
   description:
-    'Pasa la conversación a una persona del equipo cuando hay un prospecto o una solicitud de cita. No la uses para preguntas generales.',
+    'Úsala solo si la persona pide explícitamente una cita o una reunión, o si pide explícitamente que la contacten o que le envíen una cotización. No la uses para preguntas de precio, garantías, resultados ni salud: esas se responden en el texto.',
   strict: true,
   parameters: {
     type: 'object',
@@ -154,11 +154,17 @@ export async function hablarConModelo(opciones: {
   return { ok: true, texto: visible, traspaso, tPrimerToken, tFin: Date.now() };
 }
 
-function textoFinal(texto: string, traspaso: PedidoAvra | null): string {
+export function textoVisible(texto: string, hayTraspaso: boolean): string {
   const limpio = texto.trim();
-  if (!traspaso) return limpio;
-  if (limpio.includes(TEXTO_TRASPASO)) return limpio;
-  return limpio ? `${limpio}\n${TEXTO_TRASPASO}` : TEXTO_TRASPASO;
+  if (!hayTraspaso) return limpio;
+  const util = limpio.split(TEXTO_TRASPASO).join('').trim();
+  const base = util || 'Te explico por aquí y, si quieres, una persona del equipo lo sigue contigo.';
+  if (util && limpio.includes(TEXTO_TRASPASO)) return limpio;
+  return `${base}\n${TEXTO_TRASPASO}`;
+}
+
+function textoFinal(texto: string, traspaso: PedidoAvra | null): string {
+  return textoVisible(texto, traspaso !== null);
 }
 
 export function interpretarTraspaso(crudo: string): PedidoAvra | null {
