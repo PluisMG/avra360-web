@@ -1,0 +1,38 @@
+{
+  "name": "avra360-preview",
+  "main": "worker.mjs",
+  "compatibility_date": "2026-10-29",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "html_handling": "drop-trailing-slash",
+    "not_found_handling": "404-page",
+    "run_worker_first": true
+  },
+  "vars": {
+    "PREVIEW": "1",
+    "CHAT_ACTIVO": "0",
+    "ALMACENAMIENTO_ACTIVO": "0",
+    "AVISO_APROBADO": "0",
+    "PUBLIC_TURNSTILE_SITE_KEY": "",
+    "CHAT_MODO": "avra",
+    "OPENAI_MODELO": "gpt-6-luna"
+  },
+  "durable_objects": {
+    "bindings": [
+      { "name": "CONVERSATION", "class_name": "Conversation" },
+      { "name": "RATE_LIMITER", "class_name": "RateLimiter" }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["Conversation", "RateLimiter"]
+    }
+  ],
+  "observability": {
+    "enabled": true,
+    "traces": { "enabled": true }
+  }
+}

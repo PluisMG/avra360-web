@@ -1,0 +1,38 @@
+---
+import { aviso, bloquesAviso } from '../config/aviso';
+import Logo from '../components/Logo.astro';
+import Base from '../layouts/Base.astro';
+---
+
+<Base
+  titulo="Aviso de privacidad — AVRA 360"
+  descripcion="Borrador del aviso de privacidad de AVRA 360. Pendiente de aprobación."
+  robots="noindex, nofollow"
+>
+  <header class="cabecera">
+    <Logo />
+  </header>
+  <main class="pagina" id="contenido">
+    <p class="banner">{aviso.banner}</p>
+    <h1>Aviso de privacidad</h1>
+    <p>Borrador del {aviso.fechaVisible}. Versión {aviso.version}.</p>
+    <p>
+      Este texto se preparó conforme a la&nbsp;<a href={aviso.leyUrl} rel="noopener noreferrer">{aviso.ley}</a>
+    </p>
+    {
+      bloquesAviso.map((bloque) => (
+        <section id={bloque.id}>
+          <h2>{bloque.titulo}</h2>
+          {bloque.parrafos?.map((parrafo) => <p>{parrafo}</p>)}
+          {bloque.lista && (
+            <ul>
+              {bloque.lista.map((item) => (
+                <li>{item}</li>
+              ))}
+            </ul>
+          )}
+        </section>
+      ))
+    }
+  </main>
+</Base>

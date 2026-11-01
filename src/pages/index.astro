@@ -1,0 +1,58 @@
+---
+import Logo from '../components/Logo.astro';
+import Base from '../layouts/Base.astro';
+
+const lede =
+  'En AVRA 360 fusionamos creatividad e inteligencia artificial para transformar ideas en experiencias visuales, estrategias de marketing y publicidad que conectan.';
+---
+
+<Base titulo="AVRA 360" descripcion={lede}>
+  <a class="saltar" href="#mensaje">Saltar al chat</a>
+  <header class="cabecera">
+    <Logo />
+  </header>
+  <div class="centro">
+    <main id="contenido">
+      <section id="hero">
+        <h1>Las ideas evolucionan.<br />La creatividad también.</h1>
+        <p class="lede">{lede}</p>
+        <p class="cierre">Imagina. Nosotros lo hacemos posible.</p>
+      </section>
+      <div id="hilo" class="hilo" tabindex="0" role="region" aria-label="Mensajes de la conversación" hidden>
+        <div id="mensajes" role="log" aria-live="polite" aria-atomic="false" aria-relevant="additions text"></div>
+      </div>
+    </main>
+    <div class="dock">
+      <div class="dock-inner">
+        <form id="chat" method="post" action="/api/chat" data-chat data-chat-activo="0" data-turnstile-site-key="" aria-label="Escribir un mensaje">
+          <label class="sr" for="mensaje">Mensaje</label>
+          <div class="caja">
+            <textarea id="mensaje" name="mensaje" rows="1" maxlength="2000" placeholder="¿Qué te gustaría crear hoy?"></textarea>
+            <button class="enviar" type="button" disabled aria-label="Enviar">
+              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                <path d="M5 12h12M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
+              </svg>
+            </button>
+          </div>
+          <div id="turnstile" aria-hidden="true"></div>
+          <div class="sugerencias" role="group" aria-label="Sugerencias">
+            <button type="button" data-sugerencia>Crear mi marca</button>
+            <button type="button" data-sugerencia>Diseñar una campaña</button>
+            <button type="button" data-sugerencia>Solicitar presupuesto</button>
+          </div>
+          <p id="nota-config" class="nota">El chat con AVRA está en configuración. Muy pronto podrás conversar aquí.</p>
+        </form>
+        <footer class="pie">
+          <p>© AVRA 360 — Marketing & Advertising</p>
+          <a href="/aviso-de-privacidad">Aviso de privacidad</a>
+        </footer>
+      </div>
+    </div>
+  </div>
+  <noscript>
+    <p class="nota">Para conversar, activa JavaScript en este navegador.</p>
+  </noscript>
+  <script>
+    import '../cliente/chat.ts';
+  </script>
+</Base>

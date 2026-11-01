@@ -10,3 +10,7 @@ dist/
 .dev.vars
 coverage/
 .lighthouse/
+test-results/
+playwright-report/
+blob-report/
+public/chat.js
