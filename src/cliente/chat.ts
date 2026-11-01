@@ -88,6 +88,10 @@ export function iniciarChat(): void {
       if (respuesta.status === 403 && data?.status === 'verificacion') {
         ({ respuesta, data } = await mandarMensaje(texto));
       }
+      if (respuesta.status === 404 && data?.status === 'no-encontrado') {
+        olvidarConversacion();
+        ({ respuesta, data } = await mandarMensaje(texto));
+      }
       if (respuesta.status === 503 && data?.status === 'configurando') {
         quitarEscribiendo();
         mostrarConfiguracion();
@@ -495,6 +499,14 @@ function guardarConversacion(id: string): void {
     localStorage.setItem(CLAVE_CONVERSACION, id);
   } catch {
     /* el aviso explica que el identificador vive en el navegador; si está bloqueado, el hilo sigue en esta visita */
+  }
+}
+
+function olvidarConversacion(): void {
+  try {
+    localStorage.removeItem(CLAVE_CONVERSACION);
+  } catch {
+    /* si el almacenamiento está bloqueado, el siguiente envío igual puede ir sin id */
   }
 }
 
