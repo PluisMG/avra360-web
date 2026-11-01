@@ -9,7 +9,7 @@ import { HERRAMIENTA, INSTRUCCIONES, MODELO_PREDETERMINADO, TEXTO_TRASPASO, mode
 const IncomingRequest = Request<unknown, IncomingRequestCfProperties>;
 
 const red = {
-  modo: 'texto' as 'texto' | 'herramienta' | 'cuelga',
+  modo: 'texto' as 'texto' | 'herramienta' | 'cuelga' | 'cuelga-traspaso' | 'solo-herramienta',
   estado: 200,
   llamadas: [] as { url: string; init: RequestInit }[],
 };
@@ -34,6 +34,31 @@ beforeEach(() => {
           { error: { message: 'detalle interno que no se registra', code: 'server_error' } },
           { status: red.estado },
         );
+      }
+      if (red.modo === 'cuelga-traspaso') {
+        const encoder = new TextEncoder();
+        const cuerpo = flujoHerramienta().replace(/\nevent: response\.completed[\s\S]*$/, '\n');
+        return new Response(
+          new ReadableStream({
+            start(control) {
+              control.enqueue(encoder.encode(cuerpo));
+              const senal = init?.signal;
+              const cortar = () => {
+                try {
+                  control.error(new DOMException('aborted', 'AbortError'));
+                } catch {
+                  /* el lector ya terminó */
+                }
+              };
+              if (senal?.aborted) cortar();
+              else senal?.addEventListener('abort', cortar, { once: true });
+            },
+          }),
+          { headers: { 'content-type': 'text/event-stream' } },
+        );
+      }
+      if (red.modo === 'solo-herramienta') {
+        return new Response(flujoSoloHerramienta(), { headers: { 'content-type': 'text/event-stream' } });
       }
       if (red.modo === 'cuelga') {
         await new Promise((_resolver, rechazar) => {
@@ -119,8 +144,6 @@ describe('respaldo', () => {
     expect(tiempos[0]?.t_recibido).toEqual(expect.any(Number));
     expect(tiempos[0]?.t_webhook_ok).toEqual(expect.any(Number));
     expect(tiempos[0]?.t_fin).toEqual(expect.any(Number));
-    expect(tiempos[0]?.t_respuesta).toEqual(expect.any(Number));
-    expect(tiempos[0]?.t_entregado).toEqual(expect.any(Number));
     expect(JSON.stringify(tiempos)).not.toContain('PRUEBA por AVRA');
     registros.restaurar();
   });
@@ -186,7 +209,6 @@ describe('streaming', () => {
     expect(fin?.t_recibido).toEqual(expect.any(Number));
     expect(fin?.t_primer_token).toEqual(expect.any(Number));
     expect(fin?.t_fin).toEqual(expect.any(Number));
-    expect(fin?.t_entregado).toEqual(expect.any(Number));
     expect(fin?.fallback).toBe(false);
     expect(fin?.ms_primer_token).toBe(Number(fin?.t_primer_token) - Number(fin?.t_recibido));
     expect(JSON.stringify(tiempos)).not.toContain('Buen día');
@@ -273,6 +295,49 @@ describe('traspaso', () => {
     ]);
     expect(JSON.stringify(avisos)).not.toContain('martes');
     expect(JSON.stringify(avisos)).not.toContain('Quiere una cita');
+    const tiempos = registros.lineas
+      .map((linea) => JSON.parse(linea) as { evento?: string; messageId?: string })
+      .filter((dato) => dato.evento === 'chat_tiempo' && dato.messageId === pendiente.messageId);
+    expect(tiempos).toHaveLength(1);
+    registros.restaurar();
+  });
+
+  it('si el stream no cierra después de pasar_a_avra, igual entrega y registra', async () => {
+    red.llamadas = [];
+    red.modo = 'cuelga-traspaso';
+    const registros = espiar();
+    const creado = await postChat('Agéndame una cita', ipNueva(), entorno({ CHAT_TIMEOUT_TOKEN_MS: '80' }));
+    red.modo = 'texto';
+    expect(creado.status).toBe(200);
+    const pendiente = (await creado.json()) as { conversationId: string; messageId: string };
+    expect(red.llamadas.some((llamada) => llamada.url.startsWith('https://webhook.test/'))).toBe(true);
+    const flujo = await getStream(pendiente.conversationId, pendiente.messageId);
+    const crudo = await leerHasta(flujo, TEXTO_TRASPASO);
+    expect(crudo).toContain('Con gusto');
+    expect(crudo).toContain(TEXTO_TRASPASO);
+    const eventos = registros.lineas.map((linea) => JSON.parse(linea) as { evento?: string; motivo?: string; messageId?: string });
+    expect(eventos.some((dato) => dato.evento === 'traspaso_avra' && dato.motivo === 'cita')).toBe(true);
+    expect(eventos.some((dato) => dato.evento === 'fallback')).toBe(false);
+    expect(eventos.filter((dato) => dato.evento === 'chat_tiempo' && dato.messageId === pendiente.messageId)).toHaveLength(1);
+    expect(registros.lineas.join('\n')).not.toContain('Agéndame');
+    registros.restaurar();
+  });
+
+  it('una herramienta sin texto igual deja una respuesta útil y el aviso', async () => {
+    red.llamadas = [];
+    red.modo = 'solo-herramienta';
+    const registros = espiar();
+    const creado = await postChat('Quiero que me contacten', ipNueva(), entorno());
+    red.modo = 'texto';
+    const pendiente = (await creado.json()) as { conversationId: string; messageId: string };
+    const flujo = await getStream(pendiente.conversationId, pendiente.messageId);
+    const crudo = await leerHasta(flujo, TEXTO_TRASPASO);
+    expect(crudo).toContain(TEXTO_TRASPASO);
+    expect(crudo).not.toContain(`"text":"${TEXTO_TRASPASO}"`);
+    expect(red.llamadas.some((llamada) => llamada.url.startsWith('https://webhook.test/'))).toBe(true);
+    const eventos = registros.lineas.map((linea) => JSON.parse(linea) as { evento?: string; messageId?: string });
+    expect(eventos.filter((dato) => dato.evento === 'chat_tiempo' && dato.messageId === pendiente.messageId)).toHaveLength(1);
+    expect(eventos.some((dato) => dato.evento === 'traspaso_avra')).toBe(true);
     registros.restaurar();
   });
 });
@@ -368,7 +433,21 @@ function flujoHerramienta(): string {
   });
   return [
     `event: response.output_text.delta\ndata: ${JSON.stringify({ type: 'response.output_text.delta', delta: 'Con gusto. ' })}\n\n`,
+    `event: response.output_item.added\ndata: ${JSON.stringify({ type: 'response.output_item.added', item: { type: 'function_call', name: 'pasar_a_avra' } })}\n\n`,
     `event: response.function_call_arguments.done\ndata: ${JSON.stringify({ type: 'response.function_call_arguments.done', name: 'pasar_a_avra', arguments: argumentos })}\n\n`,
+    `event: response.completed\ndata: ${JSON.stringify({ type: 'response.completed' })}\n\n`,
+  ].join('');
+}
+
+function flujoSoloHerramienta(): string {
+  const argumentos = JSON.stringify({
+    motivo: 'cita',
+    resumen: 'Pide una reunión',
+    cuando: '',
+  });
+  return [
+    `event: response.function_call_arguments.done\ndata: ${JSON.stringify({ type: 'response.function_call_arguments.done', arguments: argumentos })}\n\n`,
+    `event: response.completed\ndata: ${JSON.stringify({ type: 'response.completed' })}\n\n`,
   ].join('');
 }
 
@@ -402,9 +481,14 @@ async function postReply(replyToken: string, text: string) {
   return respuesta;
 }
 
-async function getStream(conversationId: string) {
+async function getStream(conversationId: string, messageId?: string) {
   const ctx = createExecutionContext();
-  return worker.fetch(new IncomingRequest(`https://avra360.example/api/chat/${conversationId}/stream`), env, ctx);
+  const consulta = messageId ? `?messageId=${encodeURIComponent(messageId)}` : '';
+  return worker.fetch(
+    new IncomingRequest(`https://avra360.example/api/chat/${conversationId}/stream${consulta}`),
+    env,
+    ctx,
+  );
 }
 
 async function leerHasta(respuesta: Response, aguja: string): Promise<string> {

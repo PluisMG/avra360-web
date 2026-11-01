@@ -1,5 +1,5 @@
 import instrucciones from './prompt-sistema.txt';
-import { HISTORIAL, MAX_SALIDA_MODELO, TIMEOUT_PRIMER_TOKEN_MS } from './constantes.ts';
+import { HISTORIAL, MAX_SALIDA_MODELO, TIMEOUT_GENERACION_MS, TIMEOUT_PRIMER_TOKEN_MS } from './constantes.ts';
 import { presente, textoEnv } from './entorno.ts';
 import type { Turno } from './webhook.ts';
 
@@ -51,6 +51,12 @@ export function timeoutPrimerToken(env: Env & { CHAT_TIMEOUT_TOKEN_MS?: string }
   return TIMEOUT_PRIMER_TOKEN_MS;
 }
 
+export function timeoutGeneracion(env: Env & { CHAT_TIMEOUT_TOKEN_MS?: string }): number {
+  const primero = timeoutPrimerToken(env);
+  if (primero < TIMEOUT_PRIMER_TOKEN_MS) return primero;
+  return TIMEOUT_GENERACION_MS;
+}
+
 export function mensajeParaAvra(pedido: PedidoAvra): string {
   const tipo = pedido.motivo === 'cita' ? 'Solicitud de cita' : 'Prospecto';
   const cuando = pedido.cuando ? ` Fecha u hora pedida: ${pedido.cuando}.` : '';
@@ -63,21 +69,31 @@ export async function hablarConModelo(opciones: {
   historial: Turno[];
   mensaje: string;
   timeoutMs: number;
+  timeoutTotalMs: number;
   alDelta: (fragmento: string) => Promise<void>;
 }): Promise<ResultadoModelo> {
   const controlador = new AbortController();
-  const temporizador = setTimeout(() => controlador.abort(), opciones.timeoutMs);
+  const corteTotal = setTimeout(() => controlador.abort(), opciones.timeoutTotalMs);
   let vioToken = false;
   let tPrimerToken = 0;
   let texto = '';
   let argumentos = '';
+  let nombreFuncion = '';
   let traspaso: PedidoAvra | null = null;
+  const cortePrimer = setTimeout(() => {
+    if (!vioToken) controlador.abort();
+  }, opciones.timeoutMs);
 
   const marcar = () => {
     if (vioToken) return;
     vioToken = true;
     tPrimerToken = Date.now();
-    clearTimeout(temporizador);
+    clearTimeout(cortePrimer);
+  };
+
+  const cerrar = () => {
+    clearTimeout(cortePrimer);
+    clearTimeout(corteTotal);
   };
 
   try {
@@ -100,7 +116,7 @@ export async function hablarConModelo(opciones: {
         store: false,
         tools: [HERRAMIENTA],
       }),
-      signal: controlador.signal,
+        signal: controlador.signal,
     });
     if (!respuesta.ok || !respuesta.body) {
       const codigo = respuesta.body ? await codigoDeError(respuesta) : '';
@@ -113,51 +129,51 @@ export async function hablarConModelo(opciones: {
     const lector = respuesta.body.getReader();
     const decodificador = new TextDecoder();
     let resto = '';
-    while (true) {
+    let seguir = true;
+    while (seguir) {
       const paso = await lector.read();
       if (paso.done) break;
       resto += decodificador.decode(paso.value, { stream: true });
       const bloques = resto.split('\n\n');
       resto = bloques.pop() ?? '';
       for (const bloque of bloques) {
-        const evento = leerEvento(bloque);
-        if (!evento) continue;
-        const tipo = typeof evento.type === 'string' ? evento.type : '';
-        if (tipo === 'response.output_text.delta' && typeof evento.delta === 'string' && evento.delta) {
+        const leido = leerEvento(bloque);
+        if (!leido) continue;
+        const { tipo, datos } = leido;
+        if (tipo === 'response.output_text.delta' && typeof datos.delta === 'string' && datos.delta) {
           marcar();
-          texto += evento.delta;
-          await opciones.alDelta(evento.delta);
+          texto += datos.delta;
+          await opciones.alDelta(datos.delta);
         }
-        if (tipo === 'response.function_call_arguments.delta' && typeof evento.delta === 'string') {
+        if (tipo === 'response.output_item.added' && datos.item && typeof datos.item === 'object') {
+          const item = datos.item as Record<string, unknown>;
+          if (item.type === 'function_call' && typeof item.name === 'string') nombreFuncion = item.name;
+        }
+        if (tipo === 'response.function_call_arguments.delta' && typeof datos.delta === 'string') {
           marcar();
-          argumentos += evento.delta;
+          argumentos += datos.delta;
         }
-        if (tipo === 'response.function_call_arguments.done') {
+        if (tipo === 'response.function_call_arguments.done' || tipo === 'response.output_item.done') {
           marcar();
-          const crudo = typeof evento.arguments === 'string' ? evento.arguments : argumentos;
-          const nombre = typeof evento.name === 'string' ? evento.name : 'pasar_a_avra';
-          if (nombre === 'pasar_a_avra') traspaso = interpretarTraspaso(crudo);
+          const pedido = pedidoDeFuncion(datos, argumentos, nombreFuncion);
+          if (pedido) traspaso = pedido;
         }
-        if (tipo === 'response.output_item.done' && evento.item && typeof evento.item === 'object') {
-          const item = evento.item as Record<string, unknown>;
-          if (item.type === 'function_call' && item.name === 'pasar_a_avra' && typeof item.arguments === 'string') {
-            marcar();
-            traspaso = interpretarTraspaso(item.arguments);
-          }
-        }
+        if (tipo === 'response.completed' || tipo === 'response.done') seguir = false;
       }
     }
+    await lector.cancel().catch(() => undefined);
   } catch {
-    if (!vioToken) return { ok: false, motivo: 'timeout' };
-    if (!texto.trim() && !traspaso) return { ok: false, motivo: 'red' };
+    if (!vioToken && !traspaso) return { ok: false, motivo: 'timeout' };
   } finally {
-    clearTimeout(temporizador);
+    cerrar();
   }
 
+  if (traspaso || texto.trim()) {
+    const visible = textoFinal(texto, traspaso);
+    if (visible) return { ok: true, texto: visible, traspaso, tPrimerToken: tPrimerToken || Date.now(), tFin: Date.now() };
+  }
   if (!vioToken) return { ok: false, motivo: 'timeout' };
-  const visible = textoFinal(texto, traspaso);
-  if (!visible) return { ok: false, motivo: 'red' };
-  return { ok: true, texto: visible, traspaso, tPrimerToken, tFin: Date.now() };
+  return { ok: false, motivo: 'red' };
 }
 
 export function textoVisible(texto: string, hayTraspaso: boolean): string {
@@ -199,16 +215,44 @@ async function codigoDeError(respuesta: Response): Promise<string> {
   return '';
 }
 
-function leerEvento(bloque: string): Record<string, unknown> | null {
-  const datos: string[] = [];
+function pedidoDeFuncion(
+  datos: Record<string, unknown>,
+  acumulado: string,
+  nombreVisto: string,
+): PedidoAvra | null {
+  const item = datos.item && typeof datos.item === 'object' ? (datos.item as Record<string, unknown>) : null;
+  const tipoEvento = typeof datos.type === 'string' ? datos.type : '';
+  if (item && item.type !== 'function_call' && tipoEvento !== 'response.function_call_arguments.done') return null;
+  const nombre =
+    (typeof datos.name === 'string' && datos.name) ||
+    (item && typeof item.name === 'string' ? item.name : '') ||
+    nombreVisto ||
+    (tipoEvento === 'response.function_call_arguments.done' ? 'pasar_a_avra' : '');
+  if (nombre !== 'pasar_a_avra') return null;
+  const crudo = textoArgumentos(datos.arguments) || (item ? textoArgumentos(item.arguments) : '') || acumulado;
+  return crudo ? interpretarTraspaso(crudo) : null;
+}
+
+function textoArgumentos(valor: unknown): string {
+  if (typeof valor === 'string') return valor;
+  if (valor && typeof valor === 'object') return JSON.stringify(valor);
+  return '';
+}
+
+function leerEvento(bloque: string): { tipo: string; datos: Record<string, unknown> } | null {
+  let nombre = '';
+  const lineas: string[] = [];
   for (const linea of bloque.split('\n')) {
-    if (linea.startsWith('data:')) datos.push(linea.slice(5).trim());
+    if (linea.startsWith('event:')) nombre = linea.slice(6).trim();
+    else if (linea.startsWith('data:')) lineas.push(linea.slice(5).trim());
   }
-  if (datos.length === 0) return null;
+  if (lineas.length === 0) return null;
   try {
-    const valor = JSON.parse(datos.join('\n')) as unknown;
+    const valor = JSON.parse(lineas.join('\n')) as unknown;
     if (!valor || typeof valor !== 'object') return null;
-    return valor as Record<string, unknown>;
+    const datos = valor as Record<string, unknown>;
+    const tipo = typeof datos.type === 'string' ? datos.type : nombre;
+    return tipo ? { tipo, datos } : null;
   } catch {
     return null;
   }

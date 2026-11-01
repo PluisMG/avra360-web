@@ -2,11 +2,13 @@ import { intentarArchivar } from './almacenamiento.ts';
 import type { Conversation } from './conversation.ts';
 import { VIDA_TOKEN_SEG } from './constantes.ts';
 import { textoEnv } from './entorno.ts';
-import { hablarConModelo, mensajeParaAvra, modeloDe, timeoutPrimerToken, type PedidoAvra } from './openai.ts';
+import { hablarConModelo, mensajeParaAvra, modeloDe, timeoutGeneracion, timeoutPrimerToken, type PedidoAvra } from './openai.ts';
 import { firmarToken } from './tokens.ts';
 import { despertarAvra, webhookAceptado, type CuerpoWebhook } from './webhook.ts';
 
 type StubConversacion = DurableObjectStub<Conversation>;
+
+const TOPE_OBJETO_MS = 3_000;
 
 export async function correrHibrido(
   env: Env,
@@ -14,53 +16,65 @@ export async function correrHibrido(
   cuerpo: CuerpoWebhook,
   messageId: string,
 ): Promise<void> {
-  const deltas: string[] = [];
+  try {
+    await atenderHibrido(env, conversacion, cuerpo, messageId);
+  } catch {
+    console.log(JSON.stringify({ evento: 'error', nombre: 'Error', conversationId: cuerpo.conversationId, messageId }));
+    await caerAAvra(env, conversacion, cuerpo, messageId, 'error');
+  }
+}
+
+async function atenderHibrido(
+  env: Env,
+  conversacion: StubConversacion,
+  cuerpo: CuerpoWebhook,
+  messageId: string,
+): Promise<void> {
   const resultado = await hablarConModelo({
     apiKey: textoEnv(env, 'OPENAI_API_KEY'),
     modelo: modeloDe(env),
     historial: cuerpo.history,
     mensaje: cuerpo.message,
     timeoutMs: timeoutPrimerToken(env),
+    timeoutTotalMs: timeoutGeneracion(env),
     alDelta: async (fragmento) => {
-      deltas.push(fragmento);
-      await conversacion.emitir('delta', { messageId, text: fragmento });
+      await conTope(conversacion.emitir('delta', { messageId, text: fragmento }));
     },
   });
 
   if (!resultado.ok) {
-    await conversacion.anotarTiempo(cuerpo.conversationId, messageId, 't_fin', Date.now(), 1);
-    console.log(
-      JSON.stringify({
-        evento: 'fallback',
-        conversationId: cuerpo.conversationId,
-        messageId,
-        motivo: resultado.motivo === 'timeout' ? 'timeout' : 'error',
-      }),
-    );
-    const estado = await despertarYArchivar(env, conversacion, cuerpo, messageId);
-    if (!webhookAceptado(estado)) await conversacion.publicarTiempo(cuerpo.conversationId, messageId);
+    await caerAAvra(env, conversacion, cuerpo, messageId, resultado.motivo === 'timeout' ? 'timeout' : 'error');
     return;
   }
 
   const guardado = await conversacion.guardarAsistente(messageId, resultado.texto);
   if (guardado !== 'ok') {
-    await conversacion.anotarTiempo(cuerpo.conversationId, messageId, 't_fin', Date.now(), 1);
-    console.log(
-      JSON.stringify({ evento: 'fallback', conversationId: cuerpo.conversationId, messageId, motivo: 'error' }),
-    );
-    const estado = await despertarYArchivar(env, conversacion, cuerpo, messageId);
-    if (!webhookAceptado(estado)) await conversacion.publicarTiempo(cuerpo.conversationId, messageId);
+    await caerAAvra(env, conversacion, cuerpo, messageId, 'error');
     return;
   }
 
   await conversacion.anotarTiempo(cuerpo.conversationId, messageId, 't_primer_token', resultado.tPrimerToken);
   await conversacion.anotarTiempo(cuerpo.conversationId, messageId, 't_fin', resultado.tFin, 0);
-  await conversacion.emitir('mensaje', { role: 'assistant', replyTo: messageId, text: resultado.texto });
-  await conversacion.emitir('fin', { messageId, traspaso: resultado.traspaso !== null });
-  await conversacion.marcarEntregas(false);
+  await conTope(conversacion.emitir('mensaje', { role: 'assistant', replyTo: messageId, text: resultado.texto }));
+  await conTope(conversacion.emitir('fin', { messageId, traspaso: resultado.traspaso !== null }));
+  await conTope(Promise.resolve(conversacion.marcarEntregas(false)));
   await intentarArchivar(env, { consentimiento: false, conversationId: cuerpo.conversationId });
 
   if (resultado.traspaso) await pasarAAvra(env, conversacion, cuerpo, resultado.traspaso);
+  await conTope(conversacion.publicarTiempo(cuerpo.conversationId, messageId));
+}
+
+async function caerAAvra(
+  env: Env,
+  conversacion: StubConversacion,
+  cuerpo: CuerpoWebhook,
+  messageId: string,
+  motivo: 'sin_clave' | 'modo' | 'error' | 'timeout',
+): Promise<void> {
+  await conversacion.anotarTiempo(cuerpo.conversationId, messageId, 't_fin', Date.now(), 1);
+  console.log(JSON.stringify({ evento: 'fallback', conversationId: cuerpo.conversationId, messageId, motivo }));
+  await despertarYArchivar(env, conversacion, cuerpo, messageId);
+  await conTope(conversacion.publicarTiempo(cuerpo.conversationId, messageId));
 }
 
 async function pasarAAvra(
@@ -109,4 +123,20 @@ async function despertarYArchivar(
   if (webhookAceptado(estado)) await conversacion.anotarTiempo(cuerpo.conversationId, messageId, 't_webhook_ok', Date.now());
   await intentarArchivar(env, { consentimiento: false, conversationId: cuerpo.conversationId });
   return estado;
+}
+
+function conTope(promesa: Promise<unknown>): Promise<void> {
+  return new Promise((resolver) => {
+    const temporizador = setTimeout(resolver, TOPE_OBJETO_MS);
+    promesa.then(
+      () => {
+        clearTimeout(temporizador);
+        resolver();
+      },
+      () => {
+        clearTimeout(temporizador);
+        resolver();
+      },
+    );
+  });
 }

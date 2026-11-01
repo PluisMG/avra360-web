@@ -42,7 +42,7 @@ La conversación vive en el Durable Object `Conversation` solo para retransmitir
 
 En `hibrido`, y solo si el secret `OPENAI_API_KEY` está cargado en Cloudflare, el Worker responde al visitante con la API Responses y empuja los tokens por el mismo SSE. Pedro carga esa llave en Cloudflare y conviene que ponga un tope de gasto mensual en la cuenta de OpenAI. La llave no va en este repositorio.
 
-Si falta la llave, el modo no es `hibrido`, OpenAI responde con error o el primer token tarda más de 8 segundos, ese mensaje sigue por el webhook de AVRA, sin un aviso de fallo.
+Si falta la llave, el modo no es `hibrido`, OpenAI responde con error, el primer token tarda más de 8 segundos o la generación no termina en 20, ese mensaje sigue por el webhook de AVRA, sin un aviso de fallo. Una llamada a `pasar_a_avra` siempre deja la respuesta en el hilo y un log, aunque el stream de la herramienta no cierre.
 
 `pasar_a_avra` solo se usa si la persona pide una cita o una reunión, o si pide que la contacten o que le envíen una cotización. Preguntas de precio, garantías o salud las responde el modelo, sin cifras y sin prometer curas. Si hay traspaso, el visitante ve esa respuesta y después: «Le paso tu solicitud a nuestro equipo; en unos segundos te confirmo por aquí.» El Worker despierta a AVRA en segundo plano con el resumen. La confirmación entra por el `POST /api/chat/reply` firmado y se empuja al navegador.
 
