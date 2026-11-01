@@ -5,7 +5,7 @@ export function politicaCsp(): string {
     "style-src 'self'",
     "img-src 'self'",
     "font-src 'self'",
-    "connect-src 'self'",
+    "connect-src 'self' https://challenges.cloudflare.com",
     "frame-src https://challenges.cloudflare.com",
     "base-uri 'none'",
     "form-action 'self'",

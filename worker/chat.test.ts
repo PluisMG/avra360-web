@@ -197,7 +197,9 @@ describe('chat activo', () => {
     const flujo = await getStream(pendiente.conversationId);
     expect(flujo.status).toBe(200);
     expect(flujo.headers.get('content-type')).toContain('text/event-stream');
-    expect(flujo.headers.get('content-security-policy')).toContain("connect-src 'self'");
+    expect(flujo.headers.get('content-security-policy')).toContain(
+      "connect-src 'self' https://challenges.cloudflare.com",
+    );
     const crudo = await leerHastaFin(flujo);
     expect(crudo).toContain('event: mensaje');
     expect(crudo).toContain('Listo por SSE');
@@ -434,7 +436,9 @@ function exigirSeguridad(respuesta: Response) {
   expect(respuesta.headers.get('referrer-policy')).toBe('strict-origin-when-cross-origin');
   const csp = respuesta.headers.get('content-security-policy') ?? '';
   expect(csp).toContain("script-src 'self' https://challenges.cloudflare.com");
-  expect(csp).toContain("connect-src 'self'");
+  expect(csp).toContain("connect-src 'self' https://challenges.cloudflare.com");
+  expect(csp).not.toMatch(/connect-src[^;]*\*/);
+  expect(csp).not.toContain('data:');
   expect(csp).toContain('frame-src https://challenges.cloudflare.com');
   expect(csp).toContain('report-to csp');
   expect(csp).toContain('report-uri /api/csp-report');
