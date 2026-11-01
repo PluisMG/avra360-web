@@ -21,7 +21,7 @@ export async function enrutar(request: Request, env: Env, ctx: ExecutionContext)
   const eventos = url.pathname.match(/^\/api\/chat\/([0-9a-f-]{36})\/events$/i);
   if (request.method === 'GET' && eventos?.[1]) return getEventos(eventos[1], env);
   const flujo = url.pathname.match(/^\/api\/chat\/([0-9a-f-]{36})\/stream$/i);
-  if (request.method === 'GET' && flujo?.[1]) return getStream(flujo[1], env);
+  if (request.method === 'GET' && flujo?.[1]) return getStream(flujo[1], url, env);
   if (url.pathname.startsWith('/api/')) return json({ status: 'no-encontrado' }, 404);
   return null;
 }
@@ -117,12 +117,15 @@ async function postReply(request: Request, env: Env): Promise<Response> {
   return json({ status: 'ok' });
 }
 
-async function getStream(conversationId: string, env: Env): Promise<Response> {
+async function getStream(conversationId: string, url: URL, env: Env): Promise<Response> {
   if (!chatListo(env)) return json({ status: 'configurando' }, 503);
   if (!UUID.test(conversationId)) return json({ status: 'invalido' }, 400);
   const conversacion = env.CONVERSATION.get(env.CONVERSATION.idFromName(conversationId));
   if (!(await conversacion.existe())) return json({ status: 'no-encontrado' }, 404);
-  return conversacion.fetch(new Request('https://conversation.internal/sse'));
+  const destino = new URL('https://conversation.internal/sse');
+  const messageId = url.searchParams.get('messageId') ?? '';
+  if (UUID.test(messageId)) destino.searchParams.set('messageId', messageId);
+  return conversacion.fetch(new Request(destino));
 }
 
 async function getEventos(conversationId: string, env: Env): Promise<Response> {

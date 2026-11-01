@@ -28,7 +28,8 @@ export class Conversation extends DurableObject<Env> {
   async fetch(request: Request): Promise<Response> {
     const url = new URL(request.url);
     if (url.pathname !== '/sse') return new Response(null, { status: 404 });
-    return this.abrirSse();
+    const messageId = url.searchParams.get('messageId');
+    return this.abrirSse(messageId && messageId.length > 0 ? messageId : null);
   }
 
   async emitir(evento: string, datos: Record<string, unknown>): Promise<void> {
@@ -212,14 +213,15 @@ export class Conversation extends DurableObject<Env> {
     )`);
   }
 
-  private abrirSse(): Response {
+  private abrirSse(messageId: string | null): Response {
     let control: ReadableStreamDefaultController<Uint8Array> | undefined;
     const stream = new ReadableStream<Uint8Array>({
       start: (controlador) => {
         control = controlador;
-        if (this.bufferSse.length === 0) this.reponerDesdeSql();
+        if (this.bufferSse.length === 0) this.reponerDesdeSql(messageId);
+        const frames = this.framesDesde(messageId);
         this.oyentes.add(controlador);
-        if (this.bufferSse.length > 0) controlador.enqueue(encoderSse.encode(this.bufferSse.join('')));
+        if (frames.length > 0) controlador.enqueue(encoderSse.encode(frames.join('')));
         this.marcarEntregas(false);
       },
       cancel: () => {
@@ -234,20 +236,29 @@ export class Conversation extends DurableObject<Env> {
     });
   }
 
-  private reponerDesdeSql(): void {
+  private reponerDesdeSql(messageId: string | null): void {
     const filas = this.filas<{ reply_to: string; text: string }>(
       `SELECT reply_to, text FROM messages
        WHERE role = 'assistant' AND reply_to IS NOT NULL
        ORDER BY created_at ASC`,
     );
+    const corte = messageId ? filas.findIndex((fila) => fila.reply_to === messageId) : 0;
+    const relevantes = corte < 0 ? [] : filas.slice(corte);
     const cerrados = new Set<string>();
-    for (const fila of filas) {
+    for (const fila of relevantes) {
       this.emitirFrame('mensaje', { role: 'assistant', replyTo: fila.reply_to, text: fila.text });
       cerrados.add(fila.reply_to);
     }
-    for (const messageId of cerrados) {
-      this.emitirFrame('fin', { messageId, traspaso: false });
+    for (const id of cerrados) {
+      this.emitirFrame('fin', { messageId: id, traspaso: false });
     }
+  }
+
+  private framesDesde(messageId: string | null): string[] {
+    if (!messageId) return this.bufferSse;
+    const inicio = this.bufferSse.findIndex((frame) => frame.includes(`"${messageId}"`));
+    if (inicio < 0) return [];
+    return this.bufferSse.slice(inicio);
   }
 
   private emitirFrame(evento: string, datos: Record<string, unknown>): void {

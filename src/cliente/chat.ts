@@ -256,10 +256,13 @@ export function iniciarChat(): void {
   async function esperarPorSse(conversationId: string, messageId: string): Promise<string> {
     const inicio = Date.now();
     const controlador = new AbortController();
-    const respuesta = await fetch(`/api/chat/${encodeURIComponent(conversationId)}/stream`, {
-      headers: { accept: 'text/event-stream' },
-      signal: controlador.signal,
-    });
+    const respuesta = await fetch(
+      `/api/chat/${encodeURIComponent(conversationId)}/stream?messageId=${encodeURIComponent(messageId)}`,
+      {
+        headers: { accept: 'text/event-stream' },
+        signal: controlador.signal,
+      },
+    );
     const tipo = respuesta.headers.get('content-type') ?? '';
     if (!respuesta.ok || !respuesta.body || !tipo.includes('text/event-stream')) {
       controlador.abort();
@@ -291,11 +294,12 @@ export function iniciarChat(): void {
           } else if (
             evento.nombre === 'mensaje' &&
             evento.datos.role === 'assistant' &&
+            typeof evento.datos.replyTo === 'string' &&
             evento.datos.replyTo !== messageId &&
             typeof evento.datos.text === 'string'
           ) {
-            agregarMensaje('assistant', evento.datos.text);
-            if (esperaConfirmacion) return texto;
+            const nuevo = mostrarUnaVez(evento.datos.replyTo, evento.datos.text);
+            if (esperaConfirmacion && nuevo) return texto;
           }
           if (evento.nombre === 'fin' && evento.datos.messageId === messageId && texto) {
             if (evento.datos.traspaso === true) {
@@ -319,15 +323,27 @@ export function iniciarChat(): void {
     throw new Error('sse');
   }
 
-  function pintarRespuesta(messageId: string, texto: string): void {
+  function pintarRespuesta(clave: string, texto: string): void {
     quitarEscribiendo();
-    let p = lista.querySelector<HTMLParagraphElement>(`[data-reply="${messageId}"]`);
+    const p = buscarRespuesta(clave);
     if (!p) {
-      p = agregarMensaje('assistant', texto);
-      p.dataset.reply = messageId;
+      const nuevo = agregarMensaje('assistant', texto);
+      nuevo.dataset.reply = clave;
       return;
     }
     p.textContent = texto;
+  }
+
+  function mostrarUnaVez(clave: string, texto: string): boolean {
+    if (buscarRespuesta(clave)) return false;
+    const p = agregarMensaje('assistant', texto);
+    p.dataset.reply = clave;
+    return true;
+  }
+
+  function buscarRespuesta(clave: string): HTMLParagraphElement | null {
+    if (!/^[0-9a-f-]{36}$/i.test(clave)) return null;
+    return lista.querySelector<HTMLParagraphElement>(`[data-reply="${clave}"]`);
   }
 
   async function esperarPorSondeo(conversationId: string, messageId: string): Promise<string> {

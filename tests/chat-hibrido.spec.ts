@@ -52,25 +52,44 @@ async function preparar(page: Page) {
         return;
       }
       if (pedido.method() === 'GET' && ruta.pathname.endsWith('/stream')) {
-        const ultimo = respuestas.at(-1);
-        const eventos = ultimo
-          ? [
-              `event: delta\ndata: ${JSON.stringify({ messageId: ultimo.messageId, text: 'PRUEBA ' })}\n\n`,
-              `event: delta\ndata: ${JSON.stringify({ messageId: ultimo.messageId, text: ultimo.text.slice('PRUEBA '.length) })}\n\n`,
-              `event: mensaje\ndata: ${JSON.stringify({ role: 'assistant', replyTo: ultimo.messageId, text: ultimo.text })}\n\n`,
-              `event: fin\ndata: ${JSON.stringify({ messageId: ultimo.messageId, traspaso: false })}\n\n`,
-            ].join('')
-          : '';
         await route.fulfill({
           status: 200,
           headers: { 'content-type': 'text/event-stream; charset=utf-8' },
-          body: eventos,
+          body: eventosConHistorial(respuestas),
         });
         return;
       }
       await route.fulfill({ status: 404, json: { status: 'no-encontrado' } });
     },
   );
+}
+
+const CONFIRMACION = 'PRUEBA confirmación';
+const ID_CONFIRMACION = '00000000-0000-4000-8000-000000000099';
+
+function evento(nombre: string, datos: unknown): string {
+  return `event: ${nombre}\ndata: ${JSON.stringify(datos)}\n\n`;
+}
+
+function eventosConHistorial(todos: { messageId: string; text: string }[]): string {
+  const ultimo = todos.at(-1);
+  if (!ultimo) return '';
+  const bloques: string[] = [];
+  for (const previo of todos.slice(0, -1)) {
+    bloques.push(evento('mensaje', { role: 'assistant', replyTo: previo.messageId, text: previo.text }));
+    bloques.push(evento('fin', { messageId: previo.messageId, traspaso: false }));
+  }
+  if (todos.length > 1) {
+    bloques.push(evento('mensaje', { role: 'assistant', replyTo: ID_CONFIRMACION, text: CONFIRMACION }));
+  }
+  bloques.push(evento('delta', { messageId: ultimo.messageId, text: 'PRUEBA ' }));
+  bloques.push(evento('delta', { messageId: ultimo.messageId, text: ultimo.text.slice('PRUEBA '.length) }));
+  bloques.push(evento('mensaje', { role: 'assistant', replyTo: ultimo.messageId, text: ultimo.text }));
+  bloques.push(evento('fin', { messageId: ultimo.messageId, traspaso: todos.length === 1 }));
+  if (todos.length === 1) {
+    bloques.push(evento('mensaje', { role: 'assistant', replyTo: ID_CONFIRMACION, text: CONFIRMACION }));
+  }
+  return bloques.join('');
 }
 
 test('tres turnos en hibrido muestran el texto que llega por SSE', async ({ page }) => {
@@ -80,8 +99,16 @@ test('tres turnos en hibrido muestran el texto que llega por SSE', async ({ page
   for (let turno = 1; turno <= 3; turno += 1) {
     await page.locator('#mensaje').fill(`PRUEBA turno ${turno}`);
     await page.locator('#mensaje').press('Enter');
-    await expect(page.locator('.mensaje-assistant')).toHaveCount(turno, { timeout: 15_000 });
-    await expect(page.locator('.mensaje-assistant').nth(turno - 1)).toHaveText(`PRUEBA híbrido ${turno}`);
+    const esperados = turno + 1;
+    await expect(page.locator('.mensaje-assistant')).toHaveCount(esperados, { timeout: 15_000 });
   }
+  await expect(page.locator('.mensaje-assistant')).toHaveText([
+    'PRUEBA híbrido 1',
+    CONFIRMACION,
+    'PRUEBA híbrido 2',
+    'PRUEBA híbrido 3',
+  ]);
+  const textos = await page.locator('.mensaje-assistant').allTextContents();
+  expect(new Set(textos).size).toBe(textos.length);
   await expect(page.locator('.mensaje-error')).toHaveCount(0);
 });

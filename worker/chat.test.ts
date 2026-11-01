@@ -228,6 +228,24 @@ describe('chat activo', () => {
     espia.mockRestore();
   });
 
+  it('el SSE de un mensaje no reenvía las respuestas anteriores', async () => {
+    const creado = await postChat({ message: 'primero', turnstileToken: 'ok' }, ipNueva());
+    const primero = (await creado.json()) as { conversationId: string; messageId: string };
+    const token1 = JSON.parse(String(red.llamadas.at(-1)?.init.body)) as { replyToken: string };
+    expect((await postReply(token1.replyToken, 'PRIMERA')).status).toBe(200);
+    const seguido = await postChat(
+      { message: 'segundo', conversationId: primero.conversationId, turnstileToken: 'ok' },
+      ipNueva(),
+    );
+    const segundo = (await seguido.json()) as { messageId: string };
+    const token2 = JSON.parse(String(red.llamadas.at(-1)?.init.body)) as { replyToken: string };
+    expect((await postReply(token2.replyToken, 'SEGUNDA')).status).toBe(200);
+    const flujo = await getStream(primero.conversationId, segundo.messageId);
+    const crudo = await leerHastaFin(flujo);
+    expect(crudo).toContain('SEGUNDA');
+    expect(crudo).not.toContain('PRIMERA');
+  });
+
   it('borra la conversación cuando corre la alarma de 24 h', async () => {
     const creado = await postChat({ message: 'Temporal', turnstileToken: 'ok' }, ipNueva());
     const { conversationId } = (await creado.json()) as { conversationId: string };
@@ -356,10 +374,11 @@ async function getEventos(conversationId: string) {
   return pedir(`https://avra360.example/api/chat/${conversationId}/events`);
 }
 
-async function getStream(conversationId: string) {
+async function getStream(conversationId: string, messageId?: string) {
   const ctx = createExecutionContext();
+  const consulta = messageId ? `?messageId=${encodeURIComponent(messageId)}` : '';
   const respuesta = await worker.fetch(
-    new IncomingRequest(`https://avra360.example/api/chat/${conversationId}/stream`),
+    new IncomingRequest(`https://avra360.example/api/chat/${conversationId}/stream${consulta}`),
     env,
     ctx,
   );
