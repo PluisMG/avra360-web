@@ -39,6 +39,11 @@ export function iniciarChat(): void {
   // Token ya pedido y todavía no verificado. reset() en ese lapso lo invalida.
   let tokenEnVuelo = false;
   let reserva: Promise<string> | null = null;
+  let pegarAbajo = true;
+
+  hilo.addEventListener('scroll', () => {
+    pegarAbajo = hilo.scrollHeight - hilo.scrollTop - hilo.clientHeight < 80;
+  });
 
   area.addEventListener('focus', () => {
     if (activo) precalentarTurnstile();
@@ -77,6 +82,7 @@ export function iniciarChat(): void {
     if (!texto || ocupado) return;
     ocupado = true;
     area.value = '';
+    pegarAbajo = true;
     agregarMensaje('user', texto);
     entrarConversacion();
     if (!activo) {
@@ -200,8 +206,13 @@ export function iniciarChat(): void {
     p.className = `mensaje mensaje-${rol}`;
     p.textContent = texto;
     lista.append(p);
-    p.scrollIntoView({ block: 'nearest' });
+    irAlFinal();
     return p;
+  }
+
+  function irAlFinal(): void {
+    if (!pegarAbajo) return;
+    hilo.scrollTop = hilo.scrollHeight;
   }
 
   function mostrarConfiguracion(): void {
@@ -228,6 +239,7 @@ export function iniciarChat(): void {
     for (let i = 0; i < 3; i += 1) puntos.append(document.createElement('span'));
     p.append(etiqueta, puntos);
     lista.append(p);
+    irAlFinal();
   }
 
   function quitarEscribiendo(): void {
@@ -249,6 +261,7 @@ export function iniciarChat(): void {
       void enviarTexto(reintento);
     });
     lista.append(p, boton);
+    irAlFinal();
     boton.focus();
   }
 
@@ -436,6 +449,7 @@ export function iniciarChat(): void {
       return;
     }
     p.textContent = texto;
+    irAlFinal();
   }
 
   function mostrarUnaVez(clave: string, texto: string): boolean {
