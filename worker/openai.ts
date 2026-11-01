@@ -22,7 +22,7 @@ export const HERRAMIENTA = {
   type: 'function',
   name: 'pasar_a_avra',
   description:
-    'Úsala solo si la persona pide explícitamente una cita o una reunión, o si pide explícitamente que la contacten o que le envíen una cotización. No la uses para preguntas de precio, garantías, resultados ni salud: esas se responden en el texto.',
+    'Úsala solo si la persona pide explícitamente una cita o una reunión, o si pide explícitamente que la contacten o que le envíen una cotización. Antes de llamarla, escribe en el texto una frase corta que reconozca la solicitud y, si la dijo, la fecha u hora. No la uses para preguntas de precio, garantías, resultados ni salud: esas se responden en el texto.',
   strict: true,
   parameters: {
     type: 'object',
@@ -186,7 +186,7 @@ export function textoVisible(texto: string, hayTraspaso: boolean): string {
   const limpio = texto.trim();
   if (!hayTraspaso) return limpio;
   const util = limpio.split(TEXTO_TRASPASO).join('').trim();
-  const base = util || 'Te explico por aquí y, si quieres, una persona del equipo lo sigue contigo.';
+  const base = util || 'Ya anoté tu solicitud para que el equipo la confirme.';
   if (util && limpio.includes(TEXTO_TRASPASO)) return limpio;
   return `${base}\n${TEXTO_TRASPASO}`;
 }

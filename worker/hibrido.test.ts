@@ -233,6 +233,8 @@ describe('preguntas que responde el modelo', () => {
   ];
 
   it('no pasa a AVRA un precio ni una garantía, y el pedido lo dice', async () => {
+    expect(textoVisible('', true)).toContain('Ya anoté tu solicitud para que el equipo la confirme.');
+    expect(textoVisible('', true)).not.toContain('Te explico por aquí');
     expect(textoVisible('', true)).not.toBe(TEXTO_TRASPASO);
     expect(textoVisible('', true)).toContain(TEXTO_TRASPASO);
     expect(textoVisible('La cotización es personalizada.', true)).toContain('personalizada');
@@ -259,6 +261,9 @@ describe('preguntas que responde el modelo', () => {
       expect(pedido.instructions).not.toContain('llama a pasar_a_avra con motivo');
       expect(pedido.tools[0]).toEqual(HERRAMIENTA);
       expect(pedido.tools[0]?.description).toContain('solo si la persona pide explícitamente una cita');
+      expect(pedido.tools[0]?.description).toContain('Antes de llamarla, escribe en el texto una frase corta');
+      expect(pedido.tools[0]?.description).toContain('fecha u hora');
+      expect(pedido.instructions).toContain('una sola frase corta y concreta');
       expect(pedido.tools[0]?.description).toContain('No la uses para preguntas de precio');
       const flujo = await getStream(((await creado.clone().json()) as { conversationId: string }).conversationId);
       const crudo = await leerHasta(flujo, 'event: fin');
@@ -366,7 +371,9 @@ describe('traspaso', () => {
     const pendiente = (await creado.json()) as { conversationId: string; messageId: string };
     const flujo = await getStream(pendiente.conversationId, pendiente.messageId);
     const crudo = await leerHasta(flujo, TEXTO_TRASPASO);
+    expect(crudo).toContain('Ya anoté tu solicitud para que el equipo la confirme.');
     expect(crudo).toContain(TEXTO_TRASPASO);
+    expect(crudo).not.toContain('Te explico por aquí');
     expect(crudo).not.toContain(`"text":"${TEXTO_TRASPASO}"`);
     expect(red.llamadas.some((llamada) => llamada.url.startsWith('https://webhook.test/'))).toBe(true);
     const eventos = registros.lineas.map((linea) => JSON.parse(linea) as { evento?: string; messageId?: string });
