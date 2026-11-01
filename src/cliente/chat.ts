@@ -313,6 +313,7 @@ export function iniciarChat(): void {
           if (evento.nombre === 'fin' && evento.datos.messageId === messageId && texto) {
             if (evento.datos.traspaso === true) {
               esperaConfirmacion = true;
+              mostrarEscribiendo();
               continue;
             }
             return texto;
@@ -321,15 +322,109 @@ export function iniciarChat(): void {
       }
     } catch (error) {
       if (error instanceof Error && error.message === 'lento' && texto && !esperaConfirmacion) return texto;
-      if (error instanceof Error && error.message === 'lento' && esperaConfirmacion) throw error;
+      if (esperaConfirmacion && error instanceof Error && error.message === 'lento') throw error;
       if (texto && !esperaConfirmacion) return texto;
       throw error;
     } finally {
       controlador.abort();
     }
+    if (esperaConfirmacion) {
+      await esperarConfirmacion(conversationId, messageId, inicio);
+      return texto;
+    }
     if (texto) return texto;
     if (esperaAgotada(inicio, Date.now())) throw new Error('lento');
     throw new Error('sse');
+  }
+
+  async function esperarConfirmacion(conversationId: string, messageId: string, inicio: number): Promise<void> {
+    mostrarEscribiendo();
+    const hallada = { valor: false };
+    const porSse = esperarConfirmacionSse(conversationId, messageId, inicio, hallada);
+    const porSondeo = esperarConfirmacionSondeo(conversationId, messageId, inicio, hallada);
+    const ganoSse = await Promise.race([
+      porSse.then((lista) => lista),
+      porSondeo.then(() => false),
+    ]);
+    if (!hallada.valor && !ganoSse) await porSondeo;
+    if (!hallada.valor) {
+      quitarEscribiendo();
+      throw new Error('lento');
+    }
+    quitarEscribiendo();
+  }
+
+  async function esperarConfirmacionSse(
+    conversationId: string,
+    messageId: string,
+    inicio: number,
+    hallada: { valor: boolean },
+  ): Promise<boolean> {
+    const controlador = new AbortController();
+    try {
+      const respuesta = await fetch(
+        `/api/chat/${encodeURIComponent(conversationId)}/stream?messageId=${encodeURIComponent(messageId)}`,
+        { headers: { accept: 'text/event-stream' }, signal: controlador.signal },
+      );
+      if (!respuesta.ok || !respuesta.body) return false;
+      const lector = respuesta.body.getReader();
+      const decodificador = new TextDecoder();
+      let resto = '';
+      while (!hallada.valor && !esperaAgotada(inicio, Date.now())) {
+        const paso = await leerConTope(lector, inicio);
+        if (paso.done) break;
+        if (!paso.value) continue;
+        resto += decodificador.decode(paso.value, { stream: true });
+        const bloques = resto.split('\n\n');
+        resto = bloques.pop() ?? '';
+        for (const bloque of bloques) {
+          if (tomarConfirmacion(bloque, messageId, hallada)) return true;
+        }
+      }
+      return hallada.valor;
+    } catch {
+      return hallada.valor;
+    } finally {
+      controlador.abort();
+    }
+  }
+
+  async function esperarConfirmacionSondeo(
+    conversationId: string,
+    messageId: string,
+    inicio: number,
+    hallada: { valor: boolean },
+  ): Promise<void> {
+    let espera = ESPERA_INICIAL_MS;
+    while (!hallada.valor && !esperaAgotada(inicio, Date.now())) {
+      const restante = ESPERA_MAX_MS - (Date.now() - inicio);
+      await dormir(Math.min(espera, Math.max(0, restante)));
+      if (hallada.valor || esperaAgotada(inicio, Date.now())) break;
+      const respuesta = await fetch(`/api/chat/${encodeURIComponent(conversationId)}/events`);
+      if (!respuesta.ok) throw new Error('eventos');
+      const data = (await respuesta.json()) as { messages?: MensajeEvento[] };
+      for (const mensaje of data.messages ?? []) {
+        if (mensaje.role !== 'assistant' || typeof mensaje.text !== 'string' || typeof mensaje.replyTo !== 'string') {
+          continue;
+        }
+        if (mensaje.replyTo === messageId || buscarRespuesta(mensaje.replyTo)) continue;
+        mostrarUnaVez(mensaje.replyTo, mensaje.text);
+        hallada.valor = true;
+        return;
+      }
+      espera = siguienteEspera(espera);
+    }
+  }
+
+  function tomarConfirmacion(bloque: string, messageId: string, hallada: { valor: boolean }): boolean {
+    const evento = parsearEvento(bloque);
+    if (!evento || evento.nombre !== 'mensaje' || evento.datos.role !== 'assistant') return false;
+    if (typeof evento.datos.replyTo !== 'string' || evento.datos.replyTo === messageId) return false;
+    if (typeof evento.datos.text !== 'string') return false;
+    if (buscarRespuesta(evento.datos.replyTo)) return false;
+    mostrarUnaVez(evento.datos.replyTo, evento.datos.text);
+    hallada.valor = true;
+    return true;
   }
 
   function pintarRespuesta(clave: string, texto: string): void {
