@@ -10,6 +10,7 @@ import {
 const CLAVE_CONVERSACION = 'avra360.conversationId';
 
 type MensajeEvento = {
+  id?: string;
   role?: string;
   text?: string;
   replyTo?: string;
@@ -68,7 +69,10 @@ export function iniciarChat(): void {
     });
   }
 
+  const historialListo = restaurarHistorial();
+
   async function enviarTexto(bruto: string): Promise<void> {
+    await historialListo;
     const texto = bruto.trim();
     if (!texto || ocupado) return;
     ocupado = true;
@@ -296,6 +300,7 @@ export function iniciarChat(): void {
             texto = evento.nombre === 'delta' ? texto + evento.datos.text : evento.datos.text;
             pintarRespuesta(messageId, texto);
           } else if (
+            esperaConfirmacion &&
             evento.nombre === 'mensaje' &&
             evento.datos.role === 'assistant' &&
             typeof evento.datos.replyTo === 'string' &&
@@ -303,7 +308,7 @@ export function iniciarChat(): void {
             typeof evento.datos.text === 'string'
           ) {
             const nuevo = mostrarUnaVez(evento.datos.replyTo, evento.datos.text);
-            if (esperaConfirmacion && nuevo) return texto;
+            if (nuevo) return texto;
           }
           if (evento.nombre === 'fin' && evento.datos.messageId === messageId && texto) {
             if (evento.datos.traspaso === true) {
@@ -348,6 +353,36 @@ export function iniciarChat(): void {
   function buscarRespuesta(clave: string): HTMLParagraphElement | null {
     if (!/^[0-9a-f-]{36}$/i.test(clave)) return null;
     return lista.querySelector<HTMLParagraphElement>(`[data-reply="${clave}"]`);
+  }
+
+  async function restaurarHistorial(): Promise<void> {
+    const id = leerConversacion();
+    if (!activo || !id) return;
+    try {
+      const respuesta = await fetch(`/api/chat/${encodeURIComponent(id)}/events`);
+      if (respuesta.status === 404) {
+        olvidarConversacion();
+        return;
+      }
+      if (!respuesta.ok) return;
+      const data = (await respuesta.json()) as { messages?: MensajeEvento[] };
+      const mensajes = data.messages ?? [];
+      if (mensajes.length === 0) return;
+      entrarConversacion();
+      for (const mensaje of mensajes) {
+        if ((mensaje.role !== 'user' && mensaje.role !== 'assistant') || typeof mensaje.text !== 'string') continue;
+        if (mensaje.role === 'assistant') {
+          const clave = typeof mensaje.replyTo === 'string' ? mensaje.replyTo : null;
+          if (clave && buscarRespuesta(clave)) continue;
+          const p = agregarMensaje('assistant', mensaje.text);
+          if (clave && /^[0-9a-f-]{36}$/i.test(clave)) p.dataset.reply = clave;
+        } else {
+          agregarMensaje('user', mensaje.text);
+        }
+      }
+    } catch {
+      /* si el historial no carga, esta visita igual puede empezar de cero */
+    }
   }
 
   async function esperarPorSondeo(conversationId: string, messageId: string): Promise<string> {

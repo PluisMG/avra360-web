@@ -56,6 +56,10 @@ async function preparar(page: Page) {
         await route.fulfill({ json: { conversationId: NUEVA, messageId: MENSAJE, status: 'pending' } });
         return;
       }
+      if (pedido.method() === 'GET' && ruta.pathname.endsWith('/events')) {
+        await route.fulfill({ json: { conversationId: VIEJA, status: 'listo', messages: [] } });
+        return;
+      }
       if (pedido.method() === 'GET' && ruta.pathname.endsWith('/stream')) {
         const cuerpo = [
           `event: mensaje\ndata: ${JSON.stringify({ role: 'assistant', replyTo: MENSAJE, text: 'PRUEBA conversación nueva' })}\n\n`,
