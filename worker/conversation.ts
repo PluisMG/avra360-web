@@ -66,6 +66,27 @@ export class Conversation extends DurableObject<Env> {
     return { messageId, history: previas };
   }
 
+  async agregarInterno(text: string): Promise<{ messageId: string; history: Turno[] }> {
+    this.asegurar();
+    const previas = this.filas<{ role: string; text: string }>(
+      'SELECT role, text FROM messages ORDER BY created_at DESC LIMIT ?',
+      HISTORIAL,
+    )
+      .reverse()
+      .filter((fila): fila is Turno => fila.role === 'user' || fila.role === 'assistant');
+    const messageId = crypto.randomUUID();
+    const ahora = Date.now();
+    this.ctx.storage.sql.exec(
+      'INSERT INTO messages (id, role, text, reply_to, created_at) VALUES (?, ?, ?, NULL, ?)',
+      messageId,
+      'interno',
+      text,
+      ahora,
+    );
+    await this.ctx.storage.setAlarm(ahora + VIDA_CONVERSACION_MS);
+    return { messageId, history: previas };
+  }
+
   async guardarAsistente(messageId: string, text: string): Promise<'ok' | 'desconocido' | 'usado'> {
     this.asegurar();
     const usuario = this.filas("SELECT id FROM messages WHERE id = ? AND role = 'user'", messageId);
@@ -88,7 +109,10 @@ export class Conversation extends DurableObject<Env> {
 
   async consumirRespuesta(messageId: string, text: string): Promise<'ok' | 'desconocido' | 'usado'> {
     this.asegurar();
-    const usuario = this.filas("SELECT id FROM messages WHERE id = ? AND role = 'user'", messageId);
+    const usuario = this.filas(
+      "SELECT id FROM messages WHERE id = ? AND role IN ('user', 'interno')",
+      messageId,
+    );
     if (usuario.length === 0) return 'desconocido';
     const usado = this.filas('SELECT message_id FROM used_replies WHERE message_id = ?', messageId);
     if (usado.length > 0) return 'usado';

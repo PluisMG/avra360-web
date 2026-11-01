@@ -59,8 +59,14 @@ export function timeoutGeneracion(env: Env & { CHAT_TIMEOUT_TOKEN_MS?: string })
 
 export function mensajeParaAvra(pedido: PedidoAvra): string {
   const tipo = pedido.motivo === 'cita' ? 'Solicitud de cita' : 'Prospecto';
-  const cuando = pedido.cuando ? ` Fecha u hora pedida: ${pedido.cuando}.` : '';
-  return `${tipo}. ${pedido.resumen}.${cuando}`.replace(/\s+\./g, '.').slice(0, 2_000);
+  const partes = [cerrarFrase(tipo), cerrarFrase(pedido.resumen)];
+  if (pedido.cuando.trim()) partes.push(cerrarFrase(`Fecha u hora pedida: ${pedido.cuando}`));
+  return partes.filter(Boolean).join(' ').slice(0, 2_000);
+}
+
+function cerrarFrase(texto: string): string {
+  const limpio = texto.trim().replace(/[. ]+$/g, '').trim();
+  return limpio ? `${limpio}.` : '';
 }
 
 export async function hablarConModelo(opciones: {

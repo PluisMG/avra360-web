@@ -4,7 +4,16 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { MAX_SALIDA_MODELO } from './constantes.ts';
 import worker from './index.ts';
 import { hashIp } from './ip.ts';
-import { HERRAMIENTA, INSTRUCCIONES, MODELO_PREDETERMINADO, TEXTO_TRASPASO, modeloDe, textoVisible, usarHibrido } from './openai.ts';
+import {
+  HERRAMIENTA,
+  INSTRUCCIONES,
+  MODELO_PREDETERMINADO,
+  TEXTO_TRASPASO,
+  mensajeParaAvra,
+  modeloDe,
+  textoVisible,
+  usarHibrido,
+} from './openai.ts';
 
 const IncomingRequest = Request<unknown, IncomingRequestCfProperties>;
 
@@ -259,6 +268,31 @@ describe('preguntas que responde el modelo', () => {
   });
 });
 
+describe('resumen para AVRA', () => {
+  it('no duplica puntos y no se publica como mensaje del visitante', async () => {
+    const resumen = mensajeParaAvra({
+      motivo: 'cita',
+      resumen: 'Juan solicita agendar. Proporcionó nombre, clínica y correo.',
+      cuando: 'martes 3 de noviembre a las 11:00 a. m.',
+    });
+    expect(resumen).toBe(
+      'Solicitud de cita. Juan solicita agendar. Proporcionó nombre, clínica y correo. Fecha u hora pedida: martes 3 de noviembre a las 11:00 a. m.',
+    );
+    expect(resumen).not.toContain('..');
+
+    red.llamadas = [];
+    red.modo = 'herramienta';
+    const creado = await postChat('Quiero una cita el martes', ipNueva(), entorno());
+    red.modo = 'texto';
+    const pendiente = (await creado.json()) as { conversationId: string };
+    const eventos = await getEventos(pendiente.conversationId);
+    const data = (await eventos.json()) as { messages: { role: string; text: string }[] };
+    expect(data.messages.some((mensaje) => mensaje.text.includes('Solicitud de cita'))).toBe(false);
+    expect(data.messages.some((mensaje) => mensaje.role === 'user' && mensaje.text.includes('correo'))).toBe(false);
+    expect(data.messages.some((mensaje) => mensaje.role === 'assistant')).toBe(true);
+  });
+});
+
 describe('traspaso', () => {
   it('pasar_a_avra despierta a AVRA y la confirmación firmada se empuja', async () => {
     red.llamadas = [];
@@ -479,6 +513,11 @@ async function postReply(replyToken: string, text: string) {
   );
   await waitOnExecutionContext(ctx);
   return respuesta;
+}
+
+async function getEventos(conversationId: string) {
+  const ctx = createExecutionContext();
+  return worker.fetch(new IncomingRequest(`https://avra360.example/api/chat/${conversationId}/events`), env, ctx);
 }
 
 async function getStream(conversationId: string, messageId?: string) {

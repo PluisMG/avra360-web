@@ -84,7 +84,7 @@ async function pasarAAvra(
   pedido: PedidoAvra,
 ): Promise<void> {
   const resumen = mensajeParaAvra(pedido);
-  const { messageId, history } = await conversacion.agregarUsuario(resumen);
+  const { messageId, history } = await conversacion.agregarInterno(resumen);
   await conversacion.anotarTiempo(anterior.conversationId, messageId, 't_recibido', Date.now());
   const expira = Math.floor(Date.now() / 1000) + VIDA_TOKEN_SEG;
   const replyToken = await firmarToken(textoEnv(env, 'AVRA_REPLY_SIGNING_SECRET'), {
